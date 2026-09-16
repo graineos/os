@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { AppWindow, Cpu, Gauge, Grid2X2, Monitor, Power, Terminal, Wifi, Maximize2, Minimize2, X } from "lucide-react";
+import { AppWindow, Cpu, Gauge, Grid2X2, Monitor, Power, Terminal, Wifi } from "lucide-react";
 import { kernel } from "./kernel/kernel";
 import "./styles.css";
 
@@ -31,6 +31,17 @@ function App() {
 
   function push(kind: LogLine["kind"], text: string) {
     setLogs((current) => [...current, { kind, text }]);
+  }
+
+  function openPanel(nextPanel: Panel) {
+    setPanel(nextPanel);
+    setIsVisible(true);
+    setWindowState("normal");
+  }
+
+  function closeWindow() {
+    setIsVisible(false);
+    setWindowState("normal");
   }
 
   function run(raw: string) {
@@ -83,10 +94,10 @@ function App() {
         </div>
 
         <footer className="floating-taskbar">
-          <button className="launcher" onClick={() => setPanel("about")}><Grid2X2 size={19} /></button>
+          <button className="launcher" onClick={() => openPanel("about")}><Grid2X2 size={19} /></button>
           <div className="taskbar-divider" />
           <div className="pinned-apps">
-            {apps.slice(0, 4).map((app) => <button key={app.id} className={panel === app.id ? "task-button active" : "task-button"} onClick={() => { setPanel(app.id); setIsVisible(true); }} title={app.label}>{app.icon}</button>)}
+            {apps.slice(0, 4).map((app) => <button key={app.id} className={panel === app.id ? "task-button active" : "task-button"} onClick={() => openPanel(app.id)} title={app.label}>{app.icon}</button>)}
           </div>
           <div className="system-tray"><Wifi size={17} /><Monitor size={17} /><span className="clock">09:41</span><button className="power" onClick={() => run("reboot")}><Power size={16} /></button></div>
         </footer>
@@ -106,30 +117,26 @@ function App() {
 
       <section className={`window-shell ${windowState}`}>
         <header className="window-titlebar">
-          <div className="traffic-lights"><span className="red" /><span className="amber" /><span className="green" /></div>
           <div className="window-title">{apps.find((item) => item.id === panel)?.label}</div>
-          <div className="window-controls">
-            <button 
-              className="window-button green"
-              onClick={() => setWindowState(windowState === "maximized" ? "normal" : "maximized")}
-              title="Développer"
-            >
-              <Maximize2 size={16} />
-            </button>
-            <button 
-              className="window-button orange"
+          <div className="window-controls traffic-lights" aria-label="Contrôles de la fenêtre">
+            <button
+              className="traffic-button red"
+              onClick={closeWindow}
+              title="Fermer"
+              aria-label="Fermer"
+            />
+            <button
+              className="traffic-button amber"
               onClick={() => setWindowState("minimized")}
               title="Réduire"
-            >
-              <Minimize2 size={16} />
-            </button>
-            <button 
-              className="window-button red"
-              onClick={() => setIsVisible(false)}
-              title="Fermer"
-            >
-              <X size={16} />
-            </button>
+              aria-label="Réduire"
+            />
+            <button
+              className="traffic-button green"
+              onClick={() => setWindowState(windowState === "maximized" ? "normal" : "maximized")}
+              title={windowState === "maximized" ? "Restaurer" : "Développer"}
+              aria-label={windowState === "maximized" ? "Restaurer" : "Développer"}
+            />
           </div>
         </header>
 
@@ -175,10 +182,10 @@ function App() {
       </section>
 
       <footer className="floating-taskbar">
-        <button className="launcher" onClick={() => setPanel("about")}><Grid2X2 size={19} /></button>
+        <button className="launcher" onClick={() => openPanel("about")}><Grid2X2 size={19} /></button>
         <div className="taskbar-divider" />
         <div className="pinned-apps">
-          {apps.slice(0, 4).map((app) => <button key={app.id} className={panel === app.id ? "task-button active" : "task-button"} onClick={() => setPanel(app.id)} title={app.label}>{app.icon}</button>)}
+          {apps.slice(0, 4).map((app) => <button key={app.id} className={panel === app.id ? "task-button active" : "task-button"} onClick={() => openPanel(app.id)} title={app.label}>{app.icon}</button>)}
         </div>
         <div className="system-tray"><Wifi size={17} /><Monitor size={17} /><span className="clock">09:41</span><button className="power" onClick={() => run("reboot")}><Power size={16} /></button></div>
       </footer>
