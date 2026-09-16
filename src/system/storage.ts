@@ -84,8 +84,9 @@ export function openDesktopDatabase() {
 async function getAll<T>(storeName: string) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(storeName, "readonly");
+  const done = transactionDone(transaction);
   const result = await requestToPromise(transaction.objectStore(storeName).getAll());
-  await transactionDone(transaction);
+  await done;
   return result as T[];
 }
 
@@ -97,24 +98,27 @@ export async function listFiles() {
 export async function getFile(id: string) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(FILES, "readonly");
+  const done = transactionDone(transaction);
   const result = await requestToPromise(transaction.objectStore(FILES).get(id));
-  await transactionDone(transaction);
+  await done;
   return result as OSFile | undefined;
 }
 
 export async function saveFile(file: OSFile) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(FILES, "readwrite");
+  const done = transactionDone(transaction);
   transaction.objectStore(FILES).put(file);
-  await transactionDone(transaction);
+  await done;
   return file;
 }
 
 export async function deleteFile(id: string) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(FILES, "readwrite");
+  const done = transactionDone(transaction);
   transaction.objectStore(FILES).delete(id);
-  await transactionDone(transaction);
+  await done;
 }
 
 export async function createTextDocument(name = "Nouveau document.txt", folder: SystemFolder = "Documents") {
@@ -164,7 +168,9 @@ export function downloadOSFile(file: OSFile) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = file.name;
+  document.body.appendChild(anchor);
   anchor.click();
+  anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -176,8 +182,9 @@ export async function listTasks() {
 export async function saveTask(task: WorkTask) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(TASKS, "readwrite");
+  const done = transactionDone(transaction);
   transaction.objectStore(TASKS).put(task);
-  await transactionDone(transaction);
+  await done;
   return task;
 }
 
@@ -197,22 +204,25 @@ export async function createTask(title: string, project = "Général") {
 export async function deleteTask(id: string) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(TASKS, "readwrite");
+  const done = transactionDone(transaction);
   transaction.objectStore(TASKS).delete(id);
-  await transactionDone(transaction);
+  await done;
 }
 
 export async function getSettings(): Promise<OSSettings> {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(SETTINGS, "readonly");
+  const done = transactionDone(transaction);
   const value = await requestToPromise(transaction.objectStore(SETTINGS).get("desktop"));
-  await transactionDone(transaction);
+  await done;
   return (value as { key: string; value: OSSettings } | undefined)?.value ?? { wallpaper: "preset:aurora" };
 }
 
 export async function saveSettings(settings: OSSettings) {
   const db = await openDesktopDatabase();
   const transaction = db.transaction(SETTINGS, "readwrite");
+  const done = transactionDone(transaction);
   transaction.objectStore(SETTINGS).put({ key: "desktop", value: settings });
-  await transactionDone(transaction);
+  await done;
   return settings;
 }
