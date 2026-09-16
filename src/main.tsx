@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { AppWindow, Cpu, Gauge, Grid2X2, Monitor, Power, Terminal, Wifi } from "lucide-react";
+import { AppWindow, Cpu, Gauge, Grid2X2, Monitor, Power, Terminal, Wifi, Maximize2, Minimize2, X } from "lucide-react";
 import { kernel } from "./kernel/kernel";
 import "./styles.css";
 
@@ -24,6 +24,8 @@ function App() {
     { kind: "system", text: "GraineOS 0.1 — noyau-graine initialisé" },
     { kind: "system", text: "Tape help pour afficher les commandes." },
   ]);
+  const [windowState, setWindowState] = useState<"normal" | "minimized" | "maximized">("normal");
+  const [isVisible, setIsVisible] = useState(true);
 
   const state = useMemo(() => kernel.status(), [version]);
 
@@ -69,6 +71,29 @@ function App() {
     }
   }
 
+  if (!isVisible) {
+    return (
+      <div className="desktop-shell">
+        <div className="wallpaper-glow glow-one" />
+        <div className="wallpaper-glow glow-two" />
+
+        <div className="desktop-topline">
+          <div className="brand-chip">GraineOS</div>
+          <div className="topline-right"><span>Prototype VM</span><span>FR</span></div>
+        </div>
+
+        <footer className="floating-taskbar">
+          <button className="launcher" onClick={() => setPanel("about")}><Grid2X2 size={19} /></button>
+          <div className="taskbar-divider" />
+          <div className="pinned-apps">
+            {apps.slice(0, 4).map((app) => <button key={app.id} className={panel === app.id ? "task-button active" : "task-button"} onClick={() => { setPanel(app.id); setIsVisible(true); }} title={app.label}>{app.icon}</button>)}
+          </div>
+          <div className="system-tray"><Wifi size={17} /><Monitor size={17} /><span className="clock">09:41</span><button className="power" onClick={() => run("reboot")}><Power size={16} /></button></div>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="desktop-shell">
       <div className="wallpaper-glow glow-one" />
@@ -79,11 +104,33 @@ function App() {
         <div className="topline-right"><span>Prototype VM</span><span>FR</span></div>
       </div>
 
-      <section className="window-shell">
+      <section className={`window-shell ${windowState}`}>
         <header className="window-titlebar">
           <div className="traffic-lights"><span className="red" /><span className="amber" /><span className="green" /></div>
           <div className="window-title">{apps.find((item) => item.id === panel)?.label}</div>
-          <div className="window-spacer" />
+          <div className="window-controls">
+            <button 
+              className="window-button green"
+              onClick={() => setWindowState(windowState === "maximized" ? "normal" : "maximized")}
+              title="Développer"
+            >
+              <Maximize2 size={16} />
+            </button>
+            <button 
+              className="window-button orange"
+              onClick={() => setWindowState("minimized")}
+              title="Réduire"
+            >
+              <Minimize2 size={16} />
+            </button>
+            <button 
+              className="window-button red"
+              onClick={() => setIsVisible(false)}
+              title="Fermer"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </header>
 
         <div className="window-content">
@@ -101,7 +148,7 @@ function App() {
 
           {panel === "monitor" && (
             <div className="dashboard-grid">
-              <article className="glass-card"><small>Cellules actives</small><strong>{state.cells.length}</strong><p>Unités d’exécution isolées.</p></article>
+              <article className="glass-card"><small>Cellules actives</small><strong>{state.cells.length}</strong><p>Unités d'exécution isolées.</p></article>
               <article className="glass-card"><small>Capacités</small><strong>{state.capabilities.length}</strong><p>Droits détenus par jetons.</p></article>
               <article className="glass-card wide"><small>État noyau</small><strong>Stable</strong><p>Simulation locale · aucune dépendance réseau nécessaire.</p></article>
             </div>
@@ -110,7 +157,7 @@ function App() {
           {panel === "capabilities" && (
             <div className="list-panel">
               {state.capabilities.map((cap) => (
-                <div className="list-row" key={cap.id}><div><strong>{cap.resource}</strong><small>{cap.id}</small></div><div className="right-meta"><span>{cap.rights.join(" · ")}</span><b className={cap.revoked ? "status revoked" : "status active"}>{cap.revoked ? "Révoquée" : "Active"}</b></div></div>
+                <div className="list-row" key={cap.id}><div><strong>{cap.resource}</strong><small>{cap.id}</small></div><div className="right-meta"><span>{cap.rights.join(" · ")}</span><b>{cap.revoked ? "révoquée" : "active"}</b></div></div>
               ))}
             </div>
           )}
@@ -122,7 +169,7 @@ function App() {
           )}
 
           {panel === "about" && (
-            <div className="about-panel"><div className="os-mark">G</div><h1>GraineOS</h1><p>Prototype convergent, minimaliste et modulaire.</p><p>L’identité visuelle reprend les codes d’un macOS moderne, tandis que la disposition générale suit une logique de bureau Windows.</p></div>
+            <div className="about-panel"><div className="os-mark">G</div><h1>GraineOS</h1><p>Prototype convergent, minimaliste et modulaire.</p><p>L'identité visuelle reprend les codes d'un système d'exploitation classique, mais revu pour l'époque contemporaine.</p></div>
           )}
         </div>
       </section>
