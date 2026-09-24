@@ -1,0 +1,11 @@
+{
+  "name": "@angel-os/core",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": "./core/index.ts",
+    "./web": "./adapters/web.ts"
+  },
+  "license": "GPL-2.0-only"
+}

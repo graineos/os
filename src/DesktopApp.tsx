@@ -25,7 +25,7 @@ import {
   Upload,
   Wifi,
 } from "lucide-react";
-import { kernel } from "./kernel/kernel";
+import { demo as kernelDemo, kernel } from "./kernel/vm";
 import {
   createTask,
   createTextDocument,
@@ -301,7 +301,7 @@ export function DesktopApp() {
       } else if (cmd === "caps") {
         kernel.status().capabilities.forEach((cap) => push("system", `${cap.id} · ${cap.resource} · ${cap.rights.join(", ")} · ${cap.revoked ? "RÉVOQUÉE" : "active"}`));
       } else if (cmd === "demo") {
-        const child = kernel.demo();
+        const child = kernelDemo();
         setVersion((v) => v + 1);
         push("ok", `Capacité dérivée ${child.id} déléguée au Moniteur.`);
       } else if (cmd === "clear") {
