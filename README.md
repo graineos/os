@@ -19,7 +19,8 @@ L’objectif du dépôt est double :
 ```text
 src/
 ├─ kernel/
-│  └─ kernel.ts       # simulation du modèle capacités/cellules
+│  ├─ kernel.ts       # noyau pur : cellules, capacités, délégation, révocation, check()
+│  └─ vm.ts           # instance de la VM web (cellules Shell et Moniteur)
 ├─ main.tsx           # bureau, fenêtres, terminal et moniteur
 └─ styles.css         # design system et matériaux visuels
 ```
@@ -38,6 +39,14 @@ La VM web n’est pas encore un noyau bare-metal. Elle sert à stabiliser l’ar
 npm install
 npm run dev
 ```
+
+## Tester le noyau
+
+```bash
+npm test
+```
+
+`src/kernel/kernel.ts` n’a aucune dépendance : il est copié tel quel dans le site `angel-leclerc.fr`, qui s’en sert comme autorité d’accès.
 
 ## Compiler
 
