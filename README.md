@@ -24,6 +24,12 @@ src/
 └─ styles.css         # design system et matériaux visuels
 ```
 
+## OPENDOOR OS (`opendoor/`)
+
+Le dossier `opendoor/` reprend le cœur OPENDOOR OS (ex-`angel-os/`) issu du dépôt du site `angel-leclerc.fr`. C’est une couche d’orchestration (événements, workflows durables, synchro, déploiement, récupération), distincte du noyau à capacités de `src/kernel/`. Elle n’est pas encore branchée à la VM web ni incluse dans le build (`tsconfig.json` ne couvre que `src/`).
+
+Ses fichiers portent l’en-tête `GPL-2.0-only`, alors que ce dépôt est sous GPL-3.0 : à harmoniser avant de mélanger les deux codes.
+
 La VM web n’est pas encore un noyau bare-metal. Elle sert à stabiliser l’architecture, l’UX et les règles du système avant les étapes bas niveau.
 
 ## Lancer en local
