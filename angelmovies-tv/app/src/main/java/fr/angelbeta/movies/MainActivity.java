@@ -103,10 +103,9 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
-        // Fenêtres « popup » acceptées : certains lecteurs exigent d'ouvrir une page de pub avant la
-        // vidéo. Elles s'affichent par-dessus (voir onCreateWindow) et Retour les ferme.
-        s.setSupportMultipleWindows(true);
-        s.setJavaScriptCanOpenWindowsAutomatically(true);
+        // Aucune fenêtre « popup » (pages de pub) : refusées dans onCreateWindow, jamais affichées.
+        s.setSupportMultipleWindows(true); // nécessaire pour intercepter (et refuser) les popups
+        s.setJavaScriptCanOpenWindowsAutomatically(false);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
         if (Build.VERSION.SDK_INT >= 23) s.setOffscreenPreRaster(true); // défilement plus fluide
         if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true);
@@ -155,8 +154,8 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                openPopup(resultMsg);
-                return true;
+                // Aucune page de pub : les fenêtres ouvertes par les lecteurs sont refusées.
+                return false;
             }
 
             // Vidéo en plein écran (bouton plein écran du lecteur).
