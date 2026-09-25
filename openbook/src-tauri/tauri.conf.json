@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OpenBook",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "fr.graineos.openbook",
   "build": {
     "frontendDist": "../src"
@@ -51,6 +51,21 @@
         "resizable": false,
         "shadow": false,
         "visible": true,
+        "focus": false
+      },
+      {
+        "label": "quickinsert",
+        "title": "OpenBook Quick Insert",
+        "url": "quickinsert.html",
+        "width": 440,
+        "height": 480,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
         "focus": false
       }
     ],

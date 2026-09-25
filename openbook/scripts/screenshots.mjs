@@ -13,6 +13,7 @@ const THEMES = ["light", "dark"];
 // Bureau d'exemple : widgets, raccourcis, météo à Paris.
 const SAMPLE = (w, h) => ({
   welcomed: true,
+  gbVersion: 2,
   weather: { lat: 48.853, lon: 2.349, name: "Paris" },
   pinned: ["gmail", "drive", "docs", "youtube", "gemini", "files"],
   desktop: [
@@ -72,6 +73,29 @@ const SCENES = {
       await f.waitForTimeout(250);
       await f.click('#menu .menu-item:has-text("Ajouter un widget")');
       await f.waitForTimeout(700);
+    },
+  },
+  "vue-ensemble": {
+    prefs: SAMPLE,
+    run: async (f, page) => {
+      await page.evaluate(() => window.__TAURI_MOCK__.simulate("wintab"));
+      await page.waitForTimeout(700);
+    },
+  },
+  recherche: {
+    prefs: SAMPLE,
+    run: async (f, page) => {
+      await page.evaluate(() => window.__TAURI_MOCK__.simulate("win"));
+      await page.waitForTimeout(500);
+      await f.fill("#search-input", "rapport");
+      await page.waitForTimeout(500);
+    },
+  },
+  "quick-insert": {
+    prefs: SAMPLE,
+    run: async (f, page) => {
+      await page.evaluate(() => window.__TAURI_MOCK__.simulate("caps"));
+      await page.waitForTimeout(700);
     },
   },
   gemini: {

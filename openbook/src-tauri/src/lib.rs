@@ -92,11 +92,33 @@ fn open_settings(app: AppHandle, page: String) -> Result<(), String> {
     let uri = match page.as_str() {
         "home" => "ms-settings:",
         "wifi" => "ms-settings:network-wifi",
+        "network" => "ms-settings:network-status",
         "bluetooth" => "ms-settings:bluetooth",
         "nightlight" => "ms-settings:nightlight",
         "display" => "ms-settings:display",
         "sound" => "ms-settings:sound",
+        "notifications" => "ms-settings:notifications",
+        "power" => "ms-settings:powersleep",
+        "battery" => "ms-settings:batterysaver",
+        "storage" => "ms-settings:storagesense",
+        "printers" => "ms-settings:printers",
+        "mouse" => "ms-settings:mousetouchpad",
+        "keyboard" => "ms-settings:typing",
         "personalization" => "ms-settings:personalization",
+        "background" => "ms-settings:personalization-background",
+        "colors" => "ms-settings:colors",
+        "lockscreen" => "ms-settings:lockscreen",
+        "apps" => "ms-settings:appsfeatures",
+        "defaultapps" => "ms-settings:defaultapps",
+        "startup" => "ms-settings:startupapps",
+        "accounts" => "ms-settings:yourinfo",
+        "signin" => "ms-settings:signinoptions",
+        "datetime" => "ms-settings:dateandtime",
+        "language" => "ms-settings:regionlanguage",
+        "privacy" => "ms-settings:privacy",
+        "update" => "ms-settings:windowsupdate",
+        "about" => "ms-settings:about",
+        "vpn" => "ms-settings:network-vpn",
         "store" => "ms-windows-store:",
         _ => return Err("Page inconnue.".into()),
     };
@@ -240,17 +262,210 @@ fn copy_text(text: String) -> Result<(), String> {
     }
 }
 
+#[derive(serde::Serialize, Default)]
+struct VolumeDto {
+    level: u8,
+    muted: bool,
+}
+
 #[tauri::command]
-fn volume(action: String) -> Result<(), String> {
+async fn volume_get() -> Result<VolumeDto, String> {
     #[cfg(windows)]
     {
-        win::system::volume(&action)
+        win::audio::get().map(|v| VolumeDto { level: v.level, muted: v.muted })
     }
     #[cfg(not(windows))]
     {
-        let _ = action;
         Err(NOT_WINDOWS.into())
     }
+}
+
+#[tauri::command]
+async fn volume_set(level: Option<u8>, muted: Option<bool>) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        if let Some(l) = level {
+            win::audio::set_level(l)?;
+        }
+        if let Some(m) = muted {
+            win::audio::set_muted(m)?;
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (level, muted);
+        Err(NOT_WINDOWS.into())
+    }
+}
+
+/// Exécute une fonction Windows, ou renvoie une erreur ailleurs.
+macro_rules! windows_only {
+    ($body:expr) => {{
+        #[cfg(windows)]
+        {
+            $body
+        }
+        #[cfg(not(windows))]
+        {
+            Err::<_, String>(NOT_WINDOWS.into())
+        }
+    }};
+}
+
+#[tauri::command]
+async fn radios_state() -> Result<serde_json::Value, String> {
+    windows_only!(win::radios::state().map(|r| serde_json::to_value(r).unwrap_or_default()))
+}
+
+#[tauri::command]
+async fn radio_set(kind: String, on: bool) -> Result<(), String> {
+    let _ = (&kind, on);
+    windows_only!(win::radios::set(&kind, on))
+}
+
+#[tauri::command]
+async fn wifi_networks() -> Result<serde_json::Value, String> {
+    windows_only!(win::radios::networks().map(|n| serde_json::to_value(n).unwrap_or_default()))
+}
+
+#[tauri::command]
+async fn wifi_connect(profile: String) -> Result<(), String> {
+    let _ = &profile;
+    windows_only!(win::radios::connect(&profile))
+}
+
+#[tauri::command]
+async fn media_now() -> Result<serde_json::Value, String> {
+    windows_only!(win::media::now_playing().map(|m| serde_json::to_value(m).unwrap_or_default()))
+}
+
+#[tauri::command]
+async fn media_control(action: String) -> Result<(), String> {
+    let _ = &action;
+    windows_only!(win::media::control(&action))
+}
+
+/* ---------------------------------------------------------------------
+   Lanceur : fichiers
+   --------------------------------------------------------------------- */
+
+#[tauri::command]
+async fn files_search(query: String) -> serde_json::Value {
+    #[cfg(windows)]
+    {
+        serde_json::to_value(win::files::search(&query, 8)).unwrap_or_default()
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = query;
+        serde_json::Value::Array(Vec::new())
+    }
+}
+
+#[tauri::command]
+async fn files_recent() -> serde_json::Value {
+    #[cfg(windows)]
+    {
+        serde_json::to_value(win::files::recent(6)).unwrap_or_default()
+    }
+    #[cfg(not(windows))]
+    {
+        serde_json::Value::Array(Vec::new())
+    }
+}
+
+#[tauri::command]
+fn open_file(app: AppHandle, path: String) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        if !win::files::is_openable(&path) {
+            return Err("Fichier hors des dossiers personnels.".into());
+        }
+        app.opener().open_path(&path, None::<&str>).map_err(|e| e.to_string())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (app, path);
+        Err(NOT_WINDOWS.into())
+    }
+}
+
+/* ---------------------------------------------------------------------
+   Fenêtres : miniatures en direct et ancrage
+   --------------------------------------------------------------------- */
+
+#[cfg(windows)]
+fn main_hwnd(app: &AppHandle) -> Option<isize> {
+    app.get_webview_window("main")?.hwnd().ok().map(|h| h.0 as isize)
+}
+
+#[tauri::command]
+fn set_thumbnails(app: AppHandle, slots: serde_json::Value) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        let slots: Vec<win::thumbs::Slot> = serde_json::from_value(slots).map_err(|e| e.to_string())?;
+        let dest = main_hwnd(&app).ok_or("Fenêtre principale introuvable.")?;
+        win::thumbs::set(dest, slots);
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (app, slots);
+        Ok(())
+    }
+}
+
+#[tauri::command]
+fn clear_thumbnails() {
+    #[cfg(windows)]
+    win::thumbs::clear();
+}
+
+#[tauri::command]
+fn snap_window(id: i64, mode: String) -> Result<(), String> {
+    let _ = (id, &mode);
+    windows_only!(win::thumbs::snap(id, &mode))
+}
+
+/* ---------------------------------------------------------------------
+   Quick Insert
+   --------------------------------------------------------------------- */
+
+#[tauri::command]
+fn qi_history() -> Vec<String> {
+    #[cfg(windows)]
+    {
+        win::quick::history()
+    }
+    #[cfg(not(windows))]
+    {
+        Vec::new()
+    }
+}
+
+#[tauri::command]
+fn qi_clear() {
+    #[cfg(windows)]
+    win::quick::clear_history();
+}
+
+#[tauri::command]
+async fn qi_insert(app: AppHandle, text: String) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("quickinsert") {
+        let _ = w.hide();
+    }
+    let _ = &text;
+    windows_only!(win::quick::insert(&text))
+}
+
+#[tauri::command]
+fn qi_close(app: AppHandle) {
+    if let Some(w) = app.get_webview_window("quickinsert") {
+        let _ = w.hide();
+    }
+    #[cfg(windows)]
+    win::quick::return_focus();
 }
 
 #[tauri::command]
@@ -330,6 +545,12 @@ struct Features {
     quick_insert: bool,
     magic_pointer: bool,
     glowbar: bool,
+    #[serde(default = "yes")]
+    windows_key: bool,
+}
+
+fn yes() -> bool {
+    true
 }
 
 #[tauri::command]
@@ -339,9 +560,10 @@ fn set_features(app: AppHandle, features: Features) {
         use std::sync::atomic::Ordering;
         win::input::QUICK_INSERT.store(features.quick_insert, Ordering::Relaxed);
         win::input::MAGIC_POINTER.store(features.magic_pointer, Ordering::Relaxed);
+        win::input::WINDOWS_KEY.store(features.windows_key, Ordering::Relaxed);
     }
     #[cfg(not(windows))]
-    let _ = (features.quick_insert, features.magic_pointer);
+    let _ = (features.quick_insert, features.magic_pointer, features.windows_key);
     if let Some(glow) = app.get_webview_window("glow") {
         let _ = if features.glowbar { glow.show() } else { glow.hide() };
     }
@@ -377,14 +599,59 @@ fn show_bubble(app: &AppHandle, x: i32, y: i32) {
     glow(app, "pulse-on");
 }
 
-/// Verr. Maj : OpenBook passe devant et ouvre sa recherche.
-fn quick_insert(app: &AppHandle) {
+/// Ouvre le lanceur d'OpenBook, avec une recherche déjà saisie (depuis Quick Insert).
+#[tauri::command]
+fn show_launcher(app: AppHandle, query: Option<String>) {
+    if let Some(w) = app.get_webview_window("quickinsert") {
+        let _ = w.hide();
+    }
     if let Some(main) = app.get_webview_window("main") {
         let _ = main.unminimize();
         let _ = main.show();
         let _ = main.set_focus();
     }
-    let _ = app.emit_to("main", "quick-insert", ());
+    let _ = app.emit_to("main", "launcher", query.unwrap_or_default());
+}
+
+/// OpenBook passe devant et reçoit `event` (« launcher » ou « overview »).
+fn front(app: &AppHandle, event: &str) {
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.unminimize();
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+    let _ = app.emit_to("main", event, ());
+}
+
+/// Verr. Maj : Quick Insert s'ouvre près du curseur texte de l'appli active.
+#[cfg(windows)]
+fn open_quick_insert(app: &AppHandle) {
+    let Some(qi) = app.get_webview_window("quickinsert") else { return };
+    if qi.is_visible().unwrap_or(false) {
+        let _ = qi.hide();
+        win::quick::return_focus();
+        return;
+    }
+    let own: Vec<isize> = ["main", "bubble", "glow", "quickinsert"]
+        .iter()
+        .filter_map(|l| app.get_webview_window(l)?.hwnd().ok().map(|h| h.0 as isize))
+        .collect();
+    let (x, y) = win::quick::capture_target(&own);
+    let size = qi.outer_size().unwrap_or(PhysicalSize::new(440, 480));
+    let (mut px, mut py) = (x, y + 8);
+    if let Ok(Some(m)) = app.monitor_from_point(x as f64, y as f64) {
+        let (mx, my) = (m.position().x, m.position().y);
+        let (mw, mh) = (m.size().width as i32, m.size().height as i32);
+        if py + size.height as i32 > my + mh - 8 {
+            py = y - size.height as i32 - 28; // au-dessus du curseur
+        }
+        px = px.clamp(mx + 8, mx + mw - size.width as i32 - 8);
+        py = py.clamp(my + 8, my + mh - size.height as i32 - 8);
+    }
+    let _ = qi.set_position(PhysicalPosition::new(px, py));
+    let _ = qi.show();
+    let _ = qi.set_focus();
+    let _ = app.emit_to("quickinsert", "qi-open", ());
 }
 
 /// La Glowbar : une fine bande transparente en haut de l'écran principal,
@@ -462,7 +729,25 @@ pub fn run() {
             close_window,
             power,
             copy_text,
-            volume,
+            volume_get,
+            volume_set,
+            radios_state,
+            radio_set,
+            wifi_networks,
+            wifi_connect,
+            media_now,
+            media_control,
+            files_search,
+            files_recent,
+            open_file,
+            set_thumbnails,
+            clear_thumbnails,
+            snap_window,
+            qi_history,
+            qi_clear,
+            qi_insert,
+            qi_close,
+            show_launcher,
             get_brightness,
             set_brightness,
             googlebook_status,
@@ -477,8 +762,17 @@ pub fn run() {
             setup_glowbar(&handle);
             #[cfg(windows)]
             {
+                win::files::start_indexer();
+                win::quick::watch_clipboard();
                 let h = handle.clone();
-                win::input::watch_caps_lock(move || quick_insert(&h));
+                win::input::watch_keys(move |key| {
+                    let h2 = h.clone();
+                    let _ = h.run_on_main_thread(move || match key {
+                        win::input::Hotkey::QuickInsert => open_quick_insert(&h2),
+                        win::input::Hotkey::Launcher => front(&h2, "launcher"),
+                        win::input::Hotkey::Overview => front(&h2, "overview"),
+                    });
+                });
                 let h = handle.clone();
                 win::input::watch_shake(move |x, y| {
                     let h2 = h.clone();
@@ -486,7 +780,7 @@ pub fn run() {
                 });
             }
             #[cfg(not(windows))]
-            let _ = (quick_insert as fn(&AppHandle), show_bubble as fn(&AppHandle, i32, i32));
+            let _ = (front as fn(&AppHandle, &str), show_bubble as fn(&AppHandle, i32, i32));
             Ok(())
         })
         .run(tauri::generate_context!())

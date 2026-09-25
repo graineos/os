@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="color-scheme" content="light dark">
+  <title>OpenBook Quick Insert</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="js/quickinsert.js"></script>
+</head>
+<body class="qi-page">
+  <div id="qi" class="qi" role="dialog" aria-label="Quick Insert">
+    <form id="qi-form" class="qi-search" autocomplete="off">
+      <span class="qi-spark" aria-hidden="true"></span>
+      <input id="qi-input" placeholder="Emoji, presse-papiers, calcul, date…" aria-label="Rechercher ou insérer">
+      <kbd class="qi-kbd">Verr. Maj</kbd>
+    </form>
+    <div class="qi-cats" role="tablist">
+      <button class="qi-cat" data-cat="all" aria-selected="true">Tout</button>
+      <button class="qi-cat" data-cat="emoji" aria-selected="false">Emoji</button>
+      <button class="qi-cat" data-cat="clipboard" aria-selected="false">Presse-papiers</button>
+      <button class="qi-cat" data-cat="date" aria-selected="false">Date et heure</button>
+    </div>
+    <div id="qi-body" class="qi-body" role="listbox"></div>
+    <div class="qi-foot"><span>↑↓ naviguer · Entrée insérer · Échap fermer</span></div>
+  </div>
+</body>
+</html>

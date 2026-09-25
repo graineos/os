@@ -19,6 +19,7 @@ const GB_OPTIONS = [
   ["accent", "Couleur d'accent Material You", "Boutons, menus et barre des tâches prennent la couleur d'OpenBook.", "palette"],
   ["wallpaper", "Même fond d'écran partout", "Le fond d'OpenBook devient celui de Windows : aucune rupture en passant de l'un à l'autre.", "wallpaper"],
   ["autohide", "Masquer la barre des tâches Windows", "Seul le dock d'OpenBook reste visible. La barre Windows réapparaît si tu pointes en bas de l'écran.", "windows"],
+  ["autostart", "Ouvrir OpenBook au démarrage", "OpenBook s'affiche dès l'ouverture de session : tu ne vois plus le bureau Windows.", "power"],
 ];
 
 function gbOptions() {
@@ -30,6 +31,7 @@ function gbOptions() {
     palette: accentPalette(),
     wallpaper: g.wallpaper ? exportPng() : null,
     autohide: g.autohide,
+    autostart: g.autostart,
   };
 }
 
@@ -38,6 +40,7 @@ export async function applyGooglebook({ silent = false } = {}) {
   try {
     await invoke("googlebook_apply", { options: gbOptions() });
     prefs.googlebook.applied = true;
+    prefs.gbVersion = 2;
     save();
     if (!silent) notify("Windows est en mode Googlebook", "Tu peux revenir à Windows à tout moment dans les paramètres.", "sparkle");
   } catch (err) {
@@ -96,7 +99,8 @@ function renderGooglebook() {
 /* ---------- Fonctions ---------- */
 
 const FEATURES = [
-  ["quickInsert", "Quick Insert (Verr. Maj)", "Verr. Maj ouvre la recherche d'OpenBook, partout. Maj + Verr. Maj active les majuscules.", "keyboard"],
+  ["windowsKey", "Touche Windows → lanceur OpenBook", "La touche Windows ouvre le lanceur d'OpenBook au lieu du menu Démarrer, Win+Tab ouvre la Vue d'ensemble. Win+E, Win+L et les autres raccourcis restent intacts.", "windows"],
+  ["quickInsert", "Quick Insert (Verr. Maj)", "Verr. Maj ouvre Quick Insert partout : emoji, presse-papiers, date, calculs, insérés dans l'appli en cours. Maj + Verr. Maj active les majuscules.", "keyboard"],
   ["magicPointer", "Magic Pointer", "Secoue la souris n'importe où pour demander à Gemini.", "pointer"],
   ["glowbar", "Glowbar", "Barre lumineuse en haut de l'écran : démarrage, Gemini, recharge.", "glow"],
 ];
@@ -195,4 +199,11 @@ export function initSettings() {
 
   pushFeatures();
   if (!prefs.welcomed) setTimeout(showWelcome, 900);
+  // Mise à jour 0.2 : Windows déjà transformé reçoit les nouvelles options
+  // (ouverture au démarrage) une seule fois, sans rien demander.
+  else if (prefs.googlebook.applied && prefs.gbVersion !== 2) {
+    prefs.gbVersion = 2;
+    save();
+    applyGooglebook({ silent: true });
+  }
 }

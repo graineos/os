@@ -2,6 +2,7 @@
 // panneau Réglages rapides et notifications (style Pixel).
 import { batterySvg, svg } from "./icons.js";
 import { prefs, save } from "./store.js";
+import { initQuickSettings, refreshQuickSettings, stopQuickSettings } from "./quicksettings.js";
 import { openSettings, syncWindows } from "./settings.js";
 import { isDark, setDark } from "./theme.js";
 import { appWindow, invoke } from "./tauri.js";
@@ -33,7 +34,6 @@ function renderNetwork() {
   const on = navigator.onLine;
   $("#net-icon").innerHTML = svg(on ? "wifi" : "wifiOff");
   $("#net-icon").title = on ? "Connecté" : "Hors ligne";
-  $("#tile-net").textContent = on ? "Connecté" : "Hors ligne";
 }
 
 /* ---------- Batterie réelle ---------- */
@@ -202,9 +202,13 @@ export function initTopbar() {
   renderTiles();
 
   initBrightness();
+  initQuickSettings();
   status.addEventListener("click", () => {
     togglePanel(qs, status);
-    if (isOpen(qs)) refreshBrightness();
+    if (isOpen(qs)) {
+      refreshBrightness();
+      refreshQuickSettings();
+    } else stopQuickSettings();
   });
   $("#qs-settings").addEventListener("click", () => openSettings());
   qs.querySelectorAll("[data-settings]").forEach((b) =>
@@ -212,11 +216,6 @@ export function initTopbar() {
       closePanel(qs);
       invoke("open_settings", { page: b.dataset.settings }).catch((err) => toast(String(err?.message ?? err), { force: true }));
     }),
-  );
-  qs.querySelectorAll("[data-volume]").forEach((b) =>
-    b.addEventListener("click", () =>
-      invoke("volume", { action: b.dataset.volume }).catch((err) => toast(String(err?.message ?? err), { force: true })),
-    ),
   );
   qs.querySelectorAll(".tile[data-tile]").forEach((tile) =>
     tile.addEventListener("click", () => {

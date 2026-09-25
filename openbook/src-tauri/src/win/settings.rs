@@ -21,6 +21,7 @@ const PERSONALIZE: &str = r"Software\Microsoft\Windows\CurrentVersion\Themes\Per
 const ACCENT: &str = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent";
 const DWM: &str = r"Software\Microsoft\Windows\DWM";
 const DESKTOP: &str = r"Control Panel\Desktop";
+const RUN: &str = r"Software\Microsoft\Windows\CurrentVersion\Run";
 
 const ABS_AUTOHIDE: u32 = 0x1;
 
@@ -35,6 +36,9 @@ pub struct Options {
     /// PNG encodé en base64 (sans préfixe data:).
     pub wallpaper: Option<String>,
     pub autohide: bool,
+    /// Ouvrir OpenBook à l'ouverture de session (demandé explicitement par l'utilisateur).
+    #[serde(default)]
+    pub autostart: bool,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -253,6 +257,12 @@ pub fn apply(opts: Options) -> Result<(), String> {
         let state = taskbar_state();
         b.taskbar_state = Some(state);
         set_taskbar_state(state | ABS_AUTOHIDE);
+    }
+
+    if opts.autostart {
+        b.remember(RUN, "OpenBook");
+        let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+        reg::set_sz(RUN, "OpenBook", &format!("\"{}\" --autostart", exe.display()));
     }
 
     broadcast();
