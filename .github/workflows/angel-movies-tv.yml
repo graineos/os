@@ -1,0 +1,55 @@
+name: Angel Movies TV (APK)
+
+on:
+  push:
+    branches: [main]
+    paths: ["angelmovies-tv/**", ".github/workflows/angel-movies-tv.yml"]
+  pull_request:
+    paths: ["angelmovies-tv/**", ".github/workflows/angel-movies-tv.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+
+      - name: Construire l'APK signé
+        working-directory: angelmovies-tv
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
+        run: gradle --no-daemon assembleRelease
+
+      - name: Nommer l'APK
+        run: cp angelmovies-tv/app/build/outputs/apk/release/app-release.apk AngelMovies-TV.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AngelMovies-TV
+          path: AngelMovies-TV.apk
+
+      # Publication sur une release fixe « angel-movies-tv » : le lien de téléchargement ne change
+      # jamais et la release OpenBook reste la « dernière » du dépôt.
+      - name: Publier
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view angel-movies-tv --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release create angel-movies-tv --repo "${{ github.repository }}" --latest=false \
+              --title "Angel Movies TV" \
+              --notes "Appli Angel Movies pour Google TV, Android TV, Fire TV, tablettes et téléphones Android. Téléchargement direct : https://angel-beta.fr/apk — guide d'installation : https://angel-beta.fr/films-tv"
+          fi
+          gh release upload angel-movies-tv AngelMovies-TV.apk --clobber --repo "${{ github.repository }}"

@@ -1,0 +1,39 @@
+plugins { id "com.android.application" }
+
+// Version : numéro d'exécution de la CI (APP_VERSION_CODE), sinon 1 en local.
+def versionCodeEnv = (System.getenv("APP_VERSION_CODE") ?: "1") as int
+
+android {
+    namespace "fr.angelbeta.movies"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "fr.angelbeta.movies"
+        minSdk 21
+        targetSdk 35
+        versionCode versionCodeEnv
+        versionName "1.0.${versionCodeEnv}"
+    }
+
+    signingConfigs {
+        // Même clé à chaque version : les mises à jour s'installent par-dessus sans désinstaller.
+        release {
+            storeFile file("../signing/angelmovies-tv.jks")
+            storePassword System.getenv("ANGEL_TV_STORE_PASSWORD") ?: "angelmovies-tv"
+            keyAlias "angelmovies"
+            keyPassword System.getenv("ANGEL_TV_KEY_PASSWORD") ?: "angelmovies-tv"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
