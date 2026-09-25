@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenBook — démo</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111; font-family: system-ui, sans-serif; }
+    #app { border: 0; width: 100%; height: 100%; display: block; }
+    #glow { position: fixed; left: 0; top: 0; width: 100%; height: 10px; border: 0; pointer-events: none; z-index: 10; background: transparent; }
+    #bubble { position: fixed; width: 460px; height: 84px; border: 0; z-index: 11; background: transparent; }
+    #tools {
+      position: fixed; right: 12px; bottom: 12px; z-index: 12; max-width: 300px;
+      padding: 10px 12px; border-radius: 16px;
+      background: rgba(20, 20, 24, .88); color: #e6e6ee; font-size: 12px; line-height: 1.5;
+    }
+    #tools b { color: #b4c5ff; }
+    #tools button { margin: 6px 6px 0 0; padding: 5px 10px; border: 0; border-radius: 999px; background: #3b4a6b; color: #fff; font: inherit; cursor: pointer; }
+    body.clean #tools { display: none; }
+  </style>
+  <script src="mock-tauri.js"></script>
+</head>
+<body>
+  <iframe id="app" src="../src/index.html" title="OpenBook"></iframe>
+  <iframe id="glow" src="../src/glow.html" title="Glowbar" allowtransparency="true"></iframe>
+  <iframe id="bubble" src="../src/bubble.html" title="Bulle Gemini" hidden allowtransparency="true"></iframe>
+  <div id="tools">
+    <b>Démo OpenBook</b> — les commandes Windows sont simulées.<br>
+    <span id="last">Aucune commande pour l'instant.</span><br>
+    <button data-sim="shake">Secouer la souris</button>
+    <button data-sim="caps">Verr. Maj</button>
+    <button data-sim="charge">Brancher le chargeur</button>
+  </div>
+</body>
+</html>

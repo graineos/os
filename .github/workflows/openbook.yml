@@ -1,0 +1,66 @@
+name: OpenBook (Windows)
+
+on:
+  push:
+    paths:
+      - "openbook/**"
+      - ".github/workflows/openbook.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: openbook-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: openbook
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: openbook/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: openbook/src-tauri -> target
+
+      - run: npm ci
+
+      # Construit l'installateur NSIS (.exe) et le .msi, puis les publie
+      # dans la Release GitHub openbook-v0.1.0 (créée si besoin, sinon mise à jour).
+      - uses: tauri-apps/tauri-action@v0
+        id: tauri
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: openbook
+          tauriScript: npm run tauri
+          tagName: openbook-v__VERSION__
+          releaseName: OpenBook v__VERSION__
+          releaseBody: |
+            Launcher plein écran pour Windows inspiré de Googlebook OS.
+            Installe `OpenBook_*_x64-setup.exe` (sans droits administrateur) ou le `.msi`.
+            Windows SmartScreen peut avertir : l'appli n'est pas signée. « Informations complémentaires » puis « Exécuter quand même ».
+          releaseDraft: false
+          prerelease: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openbook-windows
+          path: |
+            openbook/src-tauri/target/release/bundle/nsis/*.exe
+            openbook/src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
