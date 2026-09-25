@@ -24,3 +24,8 @@ export async function invoke(cmd, args) {
 export function appWindow() {
   return T?.window?.getCurrentWindow?.() ?? null;
 }
+
+/** Écoute un événement envoyé par le Rust (quick-insert, bubble-open, glow…). */
+export function listen(event, handler) {
+  return T?.event?.listen?.(event, (e) => handler(e.payload)) ?? Promise.resolve(() => {});
+}

@@ -6,8 +6,13 @@ const DEFAULTS = {
   dark: null, // null = suivre Windows
   dnd: false,
   fullscreen: true,
-  seed: "#3b5ba9",
+  wallpaper: "aurore",
   pinned: ["gmail", "drive", "docs", "youtube", "gemini", "files"],
+  desktop: [], // raccourcis : { id, x, y }
+  widgets: null, // null = widgets par défaut au premier lancement
+  weather: null, // { lat, lon, name }
+  features: { quickInsert: true, magicPointer: true, glowbar: true },
+  googlebook: { applied: false, theme: true, accent: true, wallpaper: true, autohide: true },
   notifications: [],
   welcomed: false,
 };

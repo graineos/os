@@ -1,31 +1,34 @@
 // OpenBook — point d'entrée.
+import { initDesktop } from "./desktop.js";
 import { renderDock } from "./dock.js";
 import { initDrawer } from "./drawer.js";
 import { hydrateIcons } from "./icons.js";
-import { prefs, save } from "./store.js";
+import { initRunning } from "./running.js";
+import { initSettings, openSettings } from "./settings.js";
 import { applyTheme } from "./theme.js";
 import { applyWindowMode, initTopbar } from "./topbar.js";
-import { closeAllPanels, hideMenu, menuOpen, notify, renderNotifications } from "./ui.js";
 import { hasTauri } from "./tauri.js";
+import { closeAllPanels, hideMenu, menuOpen, renderNotifications } from "./ui.js";
+import { initWallpaper } from "./wallpaper.js";
+import { loadWindowsApps } from "./winapps.js";
 
 applyTheme();
 hydrateIcons();
+initWallpaper();
 initTopbar();
 renderDock();
 initDrawer();
+initDesktop({ onOpenSettings: openSettings });
+initRunning();
+initSettings();
 renderNotifications();
-
-if (!prefs.welcomed) {
-  prefs.welcomed = true;
-  save();
-  notify("Bienvenue sur OpenBook", "Clique sur « O » pour voir toutes tes applis.", "sparkle");
-}
+loadWindowsApps();
 
 if (hasTauri) applyWindowMode();
 
 addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  if (document.querySelector("#confirm").open) return;
+  if (document.querySelector("dialog[open]")) return; // la boîte de dialogue gère Échap
   if (menuOpen()) hideMenu();
   else closeAllPanels();
 });

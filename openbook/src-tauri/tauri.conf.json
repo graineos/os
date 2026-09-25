@@ -20,6 +20,38 @@
         "shadow": false,
         "backgroundColor": "#1b1b1f",
         "visible": true
+      },
+      {
+        "label": "bubble",
+        "title": "OpenBook Gemini",
+        "url": "bubble.html",
+        "width": 460,
+        "height": 84,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": false,
+        "focus": false
+      },
+      {
+        "label": "glow",
+        "title": "OpenBook Glowbar",
+        "url": "glow.html",
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 10,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "visible": true,
+        "focus": false
       }
     ],
     "security": {
@@ -28,7 +60,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -39,7 +74,8 @@
     "shortDescription": "Launcher plein écran inspiré de Googlebook",
     "windows": {
       "nsis": {
-        "installMode": "currentUser"
+        "installMode": "currentUser",
+        "installerHooks": "./installer-hooks.nsh"
       }
     }
   }

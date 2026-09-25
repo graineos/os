@@ -12,7 +12,10 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
-  <div id="wallpaper" aria-hidden="true"></div>
+  <canvas id="wallpaper" aria-hidden="true"></canvas>
+
+  <!-- 4. Bureau : raccourcis et widgets -->
+  <main id="desktop" aria-label="Bureau"></main>
 
   <!-- 1. Barre du haut -->
   <header id="topbar">
@@ -36,7 +39,10 @@
           <div id="qs-time" class="qs-time"></div>
           <div id="qs-date" class="qs-date"></div>
         </div>
-        <div id="qs-battery" class="qs-battery"></div>
+        <div class="qs-head-right">
+          <div id="qs-battery" class="qs-battery"></div>
+          <button id="qs-settings" class="icon-btn qs-gear" title="Paramètres OpenBook"><span class="icon" data-icon="settings"></span></button>
+        </div>
       </div>
       <div class="qs-tiles">
         <button class="tile" data-tile="dark" aria-pressed="false">
@@ -51,12 +57,31 @@
           <span class="icon" data-icon="fullscreen"></span>
           <span class="tile-text"><span class="tile-label">Plein écran</span><span class="tile-state"></span></span>
         </button>
+        <button class="tile link" data-settings="wifi">
+          <span class="icon" data-icon="wifi"></span>
+          <span class="tile-text"><span class="tile-label">Internet</span><span class="tile-state" id="tile-net"></span></span>
+        </button>
+        <button class="tile link" data-settings="bluetooth">
+          <span class="icon" data-icon="bluetooth"></span>
+          <span class="tile-text"><span class="tile-label">Bluetooth</span><span class="tile-state">Paramètres</span></span>
+        </button>
+        <button class="tile link" data-settings="nightlight">
+          <span class="icon" data-icon="nightlight"></span>
+          <span class="tile-text"><span class="tile-label">Éclairage nocturne</span><span class="tile-state">Paramètres</span></span>
+        </button>
       </div>
-      <label class="qs-slider" title="La luminosité est gérée par Windows : ce curseur ne peut rien contrôler.">
+      <label class="qs-slider" id="brightness-row" title="Luminosité de l'écran">
         <span class="icon" data-icon="brightness"></span>
-        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité (non disponible)">
-        <span class="qs-slider-note">Géré par Windows</span>
+        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité">
+        <span class="qs-slider-note" id="brightness-note">Géré par Windows</span>
       </label>
+      <div class="qs-volume" role="group" aria-label="Volume">
+        <span class="icon" data-icon="volUp"></span>
+        <span class="qs-volume-label">Volume</span>
+        <button class="icon-btn tonal" data-volume="down" title="Baisser le volume"><span class="icon" data-icon="minus"></span></button>
+        <button class="icon-btn tonal" data-volume="mute" title="Couper le son"><span class="icon" data-icon="volMute"></span></button>
+        <button class="icon-btn tonal" data-volume="up" title="Monter le volume"><span class="icon" data-icon="plus"></span></button>
+      </div>
     </div>
 
     <div class="qs-card qs-notifs">
@@ -93,6 +118,8 @@
       <span class="launcher-o" aria-hidden="true"></span>
     </button>
     <div id="dock-apps" class="dock-apps" role="list"></div>
+    <span id="dock-sep" class="dock-sep" aria-hidden="true"></span>
+    <div id="dock-running" class="dock-apps" role="list" aria-label="Fenêtres ouvertes"></div>
   </nav>
 
   <div id="menu" class="menu" role="menu" hidden></div>
@@ -107,6 +134,71 @@
         <button value="ok" id="confirm-ok" class="pill-btn filled">Confirmer</button>
       </div>
     </form>
+  </dialog>
+
+  <!-- Paramètres OpenBook -->
+  <dialog id="settings" class="sheet settings" aria-label="Paramètres OpenBook">
+    <header class="sheet-head">
+      <h2>Paramètres OpenBook</h2>
+      <button id="settings-close" class="icon-btn" title="Fermer"><span class="icon" data-icon="close"></span></button>
+    </header>
+    <div class="settings-body" tabindex="-1">
+      <section id="set-wallpaper" class="set-section">
+        <h3>Fond d'écran et style</h3>
+        <p class="set-hint">Les couleurs d'OpenBook sont tirées du fond d'écran (Material You).</p>
+        <div id="wp-grid" class="wp-grid"></div>
+        <div id="theme-mode" class="segmented" role="group" aria-label="Thème">
+          <button data-mode="auto">Automatique</button>
+          <button data-mode="light">Clair</button>
+          <button data-mode="dark">Sombre</button>
+        </div>
+      </section>
+      <section id="set-googlebook" class="set-section">
+        <h3>Windows en mode Googlebook</h3>
+        <p class="set-hint">OpenBook peut habiller Windows aux couleurs de Googlebook. Tes réglages d'origine sont sauvegardés : « Revenir à Windows » les remet exactement comme avant, et la désinstallation aussi.</p>
+        <div id="gb-options" class="set-list"></div>
+        <div class="set-actions">
+          <span id="gb-status" class="set-status"></span>
+          <button id="gb-restore" class="pill-btn text"><span class="icon" data-icon="undo"></span>Revenir à Windows</button>
+          <button id="gb-apply" class="pill-btn filled">Transformer Windows</button>
+        </div>
+      </section>
+      <section id="set-features" class="set-section">
+        <h3>Fonctions Googlebook</h3>
+        <div id="feature-options" class="set-list"></div>
+      </section>
+      <section class="set-section set-about">
+        <h3>À propos</h3>
+        <p class="set-hint">OpenBook 0.1.0 — launcher inspiré de Googlebook OS. Aucune appli tierce, aucun compte : tout reste sur cet ordinateur.</p>
+      </section>
+    </div>
+  </dialog>
+
+  <!-- Sélecteur de widgets -->
+  <dialog id="widget-picker" class="sheet picker" aria-label="Ajouter un widget">
+    <header class="sheet-head">
+      <h2>Widgets</h2>
+      <button class="icon-btn picker-close" title="Fermer"><span class="icon" data-icon="close"></span></button>
+    </header>
+    <div class="picker-list" tabindex="-1"></div>
+  </dialog>
+
+  <!-- Premier lancement -->
+  <dialog id="welcome" class="sheet welcome" aria-label="Bienvenue sur OpenBook">
+    <div class="welcome-logo" aria-hidden="true"><span class="launcher-o"></span></div>
+    <h2>Bienvenue sur OpenBook</h2>
+    <p>Un clic pour que Windows ressemble à un Googlebook, partout :</p>
+    <ul class="welcome-list">
+      <li><span class="icon" data-icon="palette"></span>Thème, couleurs et fond d'écran Material You dans tout Windows</li>
+      <li><span class="icon" data-icon="windows"></span>Barre des tâches masquée : le dock OpenBook la remplace</li>
+      <li><span class="icon" data-icon="keyboard"></span>Verr. Maj ouvre la recherche (Maj + Verr. Maj pour les majuscules)</li>
+      <li><span class="icon" data-icon="pointer"></span>Secoue la souris pour demander à Gemini</li>
+    </ul>
+    <p class="welcome-note">Réversible à tout moment : Paramètres OpenBook → « Revenir à Windows ».</p>
+    <div class="welcome-actions">
+      <button id="welcome-later" class="pill-btn text">Plus tard</button>
+      <button id="welcome-go" class="pill-btn filled" autofocus><span class="icon" data-icon="sparkle"></span>Transformer Windows</button>
+    </div>
   </dialog>
 
   <div id="toasts" class="toasts" aria-live="polite"></div>

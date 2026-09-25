@@ -3,6 +3,7 @@ import { byId } from "./apps.js";
 import { appIcon, launch, onRecentChange, recent } from "./launch.js";
 import { prefs, save } from "./store.js";
 import { showMenu } from "./ui.js";
+import { onWindowsApps } from "./winapps.js";
 
 const list = document.querySelector("#dock-apps");
 
@@ -51,3 +52,4 @@ export function renderDock() {
 }
 
 onRecentChange(renderDock);
+onWindowsApps(renderDock);

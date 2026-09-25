@@ -2,6 +2,7 @@
 // panneau Réglages rapides et notifications (style Pixel).
 import { batterySvg, svg } from "./icons.js";
 import { prefs, save } from "./store.js";
+import { openSettings, syncWindows } from "./settings.js";
 import { isDark, setDark } from "./theme.js";
 import { appWindow, invoke } from "./tauri.js";
 import { closePanel, confirmAction, isOpen, onNotificationsChange, togglePanel, toast } from "./ui.js";
@@ -32,6 +33,7 @@ function renderNetwork() {
   const on = navigator.onLine;
   $("#net-icon").innerHTML = svg(on ? "wifi" : "wifiOff");
   $("#net-icon").title = on ? "Connecté" : "Hors ligne";
+  $("#tile-net").textContent = on ? "Connecté" : "Hors ligne";
 }
 
 /* ---------- Batterie réelle ---------- */
@@ -86,7 +88,7 @@ function renderTiles() {
     dnd: [prefs.dnd, prefs.dnd ? "Activé" : "Désactivé"],
     fullscreen: [prefs.fullscreen, prefs.fullscreen ? "Par-dessus Windows" : "Barre des tâches visible"],
   };
-  for (const tile of qs.querySelectorAll(".tile")) {
+  for (const tile of qs.querySelectorAll(".tile[data-tile]")) {
     const [on, label] = states[tile.dataset.tile];
     tile.setAttribute("aria-pressed", String(on));
     tile.querySelector(".tile-state").textContent = label;
@@ -117,7 +119,10 @@ export async function applyWindowMode() {
 }
 
 const tileActions = {
-  dark: () => setDark(!isDark()),
+  dark: () => {
+    setDark(!isDark());
+    syncWindows();
+  },
   dnd: () => {
     prefs.dnd = !prefs.dnd;
     save();
@@ -156,6 +161,36 @@ async function runPower(action) {
   }
 }
 
+/* ---------- Luminosité et volume ---------- */
+
+let brightnessTimer = 0;
+
+async function refreshBrightness() {
+  const input = $("#brightness");
+  let level = null;
+  try {
+    level = await invoke("get_brightness");
+  } catch {
+    level = null;
+  }
+  const ok = typeof level === "number";
+  input.disabled = !ok;
+  $("#brightness-row").classList.toggle("disabled", !ok);
+  $("#brightness-note").textContent = ok ? level + " %" : "Écran externe : réglé par l'écran";
+  if (ok) input.value = level;
+}
+
+function initBrightness() {
+  const input = $("#brightness");
+  input.addEventListener("input", () => {
+    $("#brightness-note").textContent = input.value + " %";
+    clearTimeout(brightnessTimer);
+    brightnessTimer = setTimeout(() => {
+      invoke("set_brightness", { level: Number(input.value) }).catch((err) => toast(String(err?.message ?? err), { force: true }));
+    }, 250);
+  });
+}
+
 /* ---------- Mise en place ---------- */
 
 export function initTopbar() {
@@ -166,8 +201,24 @@ export function initTopbar() {
   initBattery();
   renderTiles();
 
-  status.addEventListener("click", () => togglePanel(qs, status));
-  qs.querySelectorAll(".tile").forEach((tile) =>
+  initBrightness();
+  status.addEventListener("click", () => {
+    togglePanel(qs, status);
+    if (isOpen(qs)) refreshBrightness();
+  });
+  $("#qs-settings").addEventListener("click", () => openSettings());
+  qs.querySelectorAll("[data-settings]").forEach((b) =>
+    b.addEventListener("click", () => {
+      closePanel(qs);
+      invoke("open_settings", { page: b.dataset.settings }).catch((err) => toast(String(err?.message ?? err), { force: true }));
+    }),
+  );
+  qs.querySelectorAll("[data-volume]").forEach((b) =>
+    b.addEventListener("click", () =>
+      invoke("volume", { action: b.dataset.volume }).catch((err) => toast(String(err?.message ?? err), { force: true })),
+    ),
+  );
+  qs.querySelectorAll(".tile[data-tile]").forEach((tile) =>
     tile.addEventListener("click", () => {
       tileActions[tile.dataset.tile]();
       renderTiles();

@@ -1,8 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Droits de la fenêtre principale d'OpenBook",
-  "windows": ["main"],
+  "description": "Droits de la fen\u00eatre principale d'OpenBook",
+  "windows": [
+    "main",
+    "bubble",
+    "glow"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-set-fullscreen",
@@ -11,6 +15,8 @@
     "core:window:allow-maximize",
     "core:window:allow-set-focus",
     "core:window:allow-close",
-    "opener:default"
+    "opener:default",
+    "core:window:allow-hide",
+    "core:window:allow-show"
   ]
 }

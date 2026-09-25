@@ -1,8 +1,11 @@
-// Catalogue des applis du tiroir. `url` s'ouvre en mode application
-// (Chrome ou Edge avec --app) ; `special` déclenche une commande native ;
-// `icon` remplace l'adresse utilisée pour trouver le favicon.
+// Catalogue des applis. Trois sortes :
+// - web : `url` s'ouvre en mode application (Chrome ou Edge avec --app) ;
+//   `icon` remplace l'adresse utilisée pour trouver le favicon ;
+// - special : commande native (Fichiers → explorateur, Paramètres Windows…) ;
+// - win : appli Windows installée (raccourci du menu Démarrer), ajoutée au
+//   démarrage par winapps.js.
 
-export const APPS = [
+const WEB = [
   { id: "gmail", name: "Gmail", url: "https://mail.google.com/mail/", color: "#ea4335" },
   { id: "drive", name: "Drive", url: "https://drive.google.com/", color: "#1e8e3e" },
   { id: "docs", name: "Docs", url: "https://docs.google.com/document/", color: "#4285f4" },
@@ -20,10 +23,45 @@ export const APPS = [
   { id: "news", name: "Actualités", url: "https://news.google.com/", color: "#1a73e8" },
   { id: "contacts", name: "Contacts", url: "https://contacts.google.com/", color: "#1a73e8" },
   { id: "opendoor", name: "OpenDoor", url: "https://angel-beta.fr/opendoor", color: "#5b6cf0" },
-  { id: "files", name: "Fichiers", special: "files", color: "#8a6d00" },
-].sort((a, b) => a.name.localeCompare(b.name, "fr", { sensitivity: "base" }));
+  { id: "files", name: "Fichiers", special: "files", glyph: "folder", color: "#8a6d00" },
+];
 
-export const byId = new Map(APPS.map((a) => [a.id, a]));
+const SYSTEM = [
+  { id: "winsettings", name: "Paramètres Windows", special: "settings", page: "home", glyph: "settings", color: "#5f6368" },
+  { id: "store", name: "Microsoft Store", special: "settings", page: "store", glyph: "bag", color: "#0067b8" },
+];
+
+const collator = new Intl.Collator("fr", { sensitivity: "base" });
+const byName = (a, b) => collator.compare(a.name, b.name);
+
+/** Applis Google et OpenBook, par ordre alphabétique. */
+export const APPS = [...WEB].sort(byName);
+
+/** Applis Windows (menu Démarrer + Paramètres + Store). */
+export const WIN_APPS = [...SYSTEM].sort(byName);
+
+export const byId = new Map([...APPS, ...WIN_APPS].map((a) => [a.id, a]));
+
+const PALETTE = ["#4285f4", "#db4437", "#0f9d58", "#f4b400", "#ab47bc", "#00acc1", "#ff7043", "#5c6bc0", "#7cb342", "#8d6e63"];
+
+function colorFor(name) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+}
+
+/** Ajoute les applis installées trouvées dans le menu Démarrer. */
+export function registerWindowsApps(list) {
+  const known = new Set(WIN_APPS.map((a) => a.name.toLowerCase()));
+  for (const { name, path } of list) {
+    if (known.has(name.toLowerCase())) continue;
+    known.add(name.toLowerCase());
+    const app = { id: "win:" + path.toLowerCase(), name, path, kind: "win", color: colorFor(name) };
+    WIN_APPS.push(app);
+    byId.set(app.id, app);
+  }
+  WIN_APPS.sort(byName);
+}
 
 export function faviconUrl(app) {
   return app.url
