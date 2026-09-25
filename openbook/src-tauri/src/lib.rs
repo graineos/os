@@ -460,6 +460,36 @@ async fn qi_insert(app: AppHandle, text: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn qi_screenshots() -> serde_json::Value {
+    #[cfg(windows)]
+    {
+        serde_json::to_value(win::quick::screenshots()).unwrap_or_default()
+    }
+    #[cfg(not(windows))]
+    {
+        serde_json::Value::Array(Vec::new())
+    }
+}
+
+#[tauri::command]
+async fn qi_insert_image(app: AppHandle, path: String) -> Result<(), String> {
+    if let Some(w) = app.get_webview_window("quickinsert") {
+        let _ = w.hide();
+    }
+    let _ = &path;
+    windows_only!(win::quick::insert_image(&path))
+}
+
+#[tauri::command]
+fn qi_dictate(app: AppHandle) {
+    if let Some(w) = app.get_webview_window("quickinsert") {
+        let _ = w.hide();
+    }
+    #[cfg(windows)]
+    win::quick::dictate();
+}
+
+#[tauri::command]
 fn qi_close(app: AppHandle) {
     if let Some(w) = app.get_webview_window("quickinsert") {
         let _ = w.hide();
@@ -747,6 +777,9 @@ pub fn run() {
             qi_clear,
             qi_insert,
             qi_close,
+            qi_screenshots,
+            qi_insert_image,
+            qi_dictate,
             show_launcher,
             get_brightness,
             set_brightness,

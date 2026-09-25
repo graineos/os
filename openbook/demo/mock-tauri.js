@@ -104,6 +104,22 @@
     },
     qi_history: () => ["Rendez-vous jeudi 14 h au bureau", "https://angel-beta.fr/opendoor", "06 12 34 56 78"],
     qi_clear: () => {},
+    qi_screenshots: () =>
+      [["#4285f4", "#34a853"], ["#ea4335", "#fbbc04"], ["#6f5bd6", "#1f7a8c"]].map(([a, b], i) => ({
+        path: `${HOME}\\Pictures\\Screenshots\\Capture d'écran ${i + 1}.png`,
+        name: `Capture d'écran ${i + 1}`,
+        thumb:
+          "data:image/svg+xml," +
+          encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="220" height="138"><defs><linearGradient id="g"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="220" height="138" fill="url(#g)"/><rect x="18" y="18" width="120" height="14" rx="7" fill="#fff" opacity=".8"/><rect x="18" y="42" width="184" height="78" rx="10" fill="#fff" opacity=".35"/></svg>`),
+      })),
+    qi_insert_image: ({ path }) => {
+      document.getElementById("qi").hidden = true;
+      log(`qi_insert_image → ${path} collée dans l'appli active`);
+    },
+    qi_dictate: () => {
+      document.getElementById("qi").hidden = true;
+      log("qi_dictate → saisie vocale Windows (Win+H)");
+    },
     qi_insert: ({ text }) => {
       document.getElementById("qi").hidden = true;
       log(`qi_insert → « ${text} » collé dans l'appli active`);

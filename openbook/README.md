@@ -9,6 +9,17 @@ Il se superpose au bureau Windows et, en un clic, habille tout Windows aux coule
 2. Lance-le : il s'installe sans droits administrateur. SmartScreen peut avertir, car l'appli n'est pas signée : « Informations complémentaires » puis « Exécuter quand même ».
 3. Au premier lancement, clique sur **Transformer Windows**. C'est tout : dès la prochaine ouverture de session, OpenBook s'affiche directement et Windows n'apparaît plus.
 
+## Nouveautés de la version 3
+
+| Fonction | Détail |
+|---|---|
+| Fond d'écran personnel | Paramètres OpenBook → « Ajouter une image » : ta photo devient le fond d'OpenBook et de Windows, et toutes les couleurs (Material You) en sont tirées automatiquement. L'image reste sur l'ordinateur. |
+| Fichiers sur le bureau | Comme sur un Googlebook : clic droit sur un fichier ou dossier dans le lanceur → « Ajouter au bureau ». |
+| Quick Insert | Captures d'écran récentes (collées comme image dans l'appli en cours) et bouton « Dicter » en bas à droite (saisie vocale de Windows, l'équivalent de Rambler). |
+| Réglages rapides | Luminosité en tête du panneau, comme sur Pixel (Android 16). |
+
+Disposition identique à Googlebook OS : heure et date en haut à gauche, réglages rapides et notifications en haut à droite, dock centré avec le lanceur, tiroir façon Pixel Launcher, bureau avec applis, widgets, fichiers et dossiers. Le bouton du lanceur reste un « O » : pas de logo Google.
+
 ## Nouveautés de la version 2
 
 Reprises des comportements d'AOSP (barre des tâches de bureau d'Android, réglages rapides de SystemUI) et de ChromeOS (lanceur, Vue d'ensemble, Quick Insert), réimplémentés sur Windows. Le code propre à Googlebook OS n'est pas publié.
@@ -104,7 +115,7 @@ npm run demo          # http://localhost:4173/demo/
 
 La démo simule les commandes Windows : elles s'affichent dans l'encart en bas à droite, avec des boutons pour simuler la secousse, Verr. Maj et le chargeur. Ajoute `?clean` à l'URL pour masquer l'encart.
 
-Tests (serveur de démo lancé) : `npm test` rejoue 112 vérifications d'interface.
+Tests (serveur de démo lancé) : `npm test` rejoue 126 vérifications d'interface.
 Captures : `npm run screenshots` (derrière un proxy : `NODE_USE_ENV_PROXY=1 npm run screenshots`).
 
 ## Développer sous Windows

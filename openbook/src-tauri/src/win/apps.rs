@@ -159,15 +159,15 @@ unsafe fn icon_png(path: &str) -> Option<Vec<u8>> {
     png
 }
 
-/// Icônes de plusieurs fichiers, sous forme d'URL data:, sur un thread COM dédié.
+/// Icônes de plusieurs fichiers ou dossiers, en URL data:, sur un thread COM dédié.
 pub fn icons(paths: Vec<String>) -> HashMap<String, String> {
     std::thread::spawn(move || {
         let mut out = HashMap::new();
         unsafe {
             CoInitializeEx(std::ptr::null(), COINIT_APARTMENTTHREADED as u32);
             for p in paths {
-                let lower = p.to_lowercase();
-                if !(lower.ends_with(".lnk") || lower.ends_with(".exe")) || !Path::new(&p).is_file() {
+                // Raccourcis, exécutables, documents ou dossiers : icône du shell.
+                if !Path::new(&p).exists() {
                     continue;
                 }
                 if let Some(png) = icon_png(&p) {

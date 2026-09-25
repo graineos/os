@@ -1,7 +1,7 @@
 {
   "name": "openbook",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "OpenBook — launcher plein écran pour Windows inspiré de Googlebook OS",
   "scripts": {

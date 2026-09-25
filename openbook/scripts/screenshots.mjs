@@ -98,6 +98,17 @@ const SCENES = {
       await page.waitForTimeout(700);
     },
   },
+  "fond-perso": {
+    prefs: SAMPLE,
+    run: async (f, page) => {
+      await f.evaluate(() => document.querySelector("#qs-settings").click());
+      await page.waitForTimeout(300);
+      await f.setInputFiles("#wp-file", new URL("../demo/exemple-fond.jpg", import.meta.url).pathname);
+      await page.waitForTimeout(2500);
+      await f.click("#settings-close");
+      await page.waitForTimeout(600);
+    },
+  },
   gemini: {
     prefs: SAMPLE,
     run: async (f, page) => {

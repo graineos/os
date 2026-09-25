@@ -1,6 +1,6 @@
 [package]
 name = "openbook"
-version = "0.2.0"
+version = "0.3.0"
 description = "OpenBook — launcher plein écran pour Windows"
 authors = ["GraineOS"]
 edition = "2021"

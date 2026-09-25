@@ -3,7 +3,7 @@
 // clavier, rangée « Continuer » (fichiers récents) et grille alphabétique.
 import { APPS, WIN_APPS, byId, normalize } from "./apps.js";
 import { calculate, convert, formatNumber } from "./calc.js";
-import { addShortcut } from "./desktop.js";
+import { addFileShortcut, addShortcut } from "./desktop.js";
 import { isPinned, pin, unpin } from "./dock.js";
 import { svg } from "./icons.js";
 import { appIcon, launch, nativeIcon, openUrl } from "./launch.js";
@@ -104,10 +104,21 @@ async function renderContinue() {
     name.textContent = f.name;
     b.append(icon, name);
     b.addEventListener("click", () => openFile(f));
+    b.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      fileMenu(f, e.clientX, e.clientY);
+    });
     row.append(b);
   }
   cont.append(h, row);
   cont.hidden = false;
+}
+
+function fileMenu(f, x, y) {
+  showMenu(x, y, [
+    { label: "Ouvrir", icon: "open", run: () => openFile(f) },
+    { label: "Ajouter au bureau", icon: "desktop", run: () => addFileShortcut(f) },
+  ]);
 }
 
 async function openFile(f) {
@@ -280,7 +291,7 @@ function search() {
           iconEl.className = "res-file";
           iconEl.innerHTML = svg(f.dir ? "folder" : "file");
           nativeIcon(f.path, (url) => url && (iconEl.innerHTML = `<img src="${url}" alt="">`));
-          return row({ iconEl, title: f.name, sub: f.folder, run: () => openFile(f) });
+          return row({ iconEl, title: f.name, sub: f.folder, run: () => openFile(f), menu: (x, y) => fileMenu(f, x, y) });
         });
         const g = group("Fichiers", rows);
         filesSlot.replaceWith(g);

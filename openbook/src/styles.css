@@ -720,4 +720,20 @@ html:has(.qi-page), .qi-page { background: transparent; }
 .qi-item:hover { background: color-mix(in srgb, var(--on-surface) 7%, transparent); }
 .qi-item[aria-selected="true"] { background: var(--secondary-container); color: var(--on-secondary-container); }
 .qi-empty { margin: 18px 14px; font-size: 13px; color: var(--on-surface-variant); line-height: 1.5; }
-.qi-foot { flex: none; padding: 8px 16px; font-size: 11.5px; color: var(--on-surface-variant); border-top: 1px solid var(--outline-variant); }
+.qi-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px 6px 16px; font-size: 11.5px; color: var(--on-surface-variant); border-top: 1px solid var(--outline-variant); }
+.qi-dictate { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px 0 10px; border-radius: var(--r-pill); background: var(--primary-container); color: var(--on-primary-container); font-size: 12.5px; font-weight: 600; }
+.qi-dictate .icon { width: 16px; height: 16px; }
+.qi-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 0 4px; }
+.qi-shot { aspect-ratio: 16 / 10; border-radius: 12px; overflow: hidden; padding: 3px; }
+.qi-shot img { width: 100%; height: 100%; object-fit: cover; border-radius: 9px; display: block; }
+
+/* Fond d'écran personnel */
+.wp-add { display: grid; place-items: center; background: var(--surface-container-highest); color: var(--primary); box-shadow: inset 0 0 0 2px var(--outline-variant); }
+.wp-add svg { width: 32px; height: 32px; }
+.wp-choose { margin-top: 12px; margin-right: 8px; }
+/* Photo en fond : la barre du haut et les libellés restent lisibles. */
+.photo #topbar { color: #fff; text-shadow: 0 1px 3px rgb(0 0 0 / .55); }
+.photo .tb-date { color: rgb(255 255 255 / .85); }
+.photo .tb-status:hover { background: rgb(255 255 255 / .16); }
+
+#brightness-row { margin: 0 0 10px; }

@@ -120,12 +120,154 @@ fn key(vk: u16, up: bool) -> INPUT {
     }
 }
 
-/// Rend la main à l'appli d'origine et y colle `text` (Ctrl+V simulé).
-/// Le contenu précédent du presse-papiers est remis ensuite.
-pub fn insert(text: &str) -> Result<(), String> {
-    let previous = read_clipboard_text();
-    RECORD.store(false, Ordering::Relaxed);
-    super::system::copy_text(text)?;
+/* ---------- Captures d'écran récentes ---------- */
+
+#[derive(serde::Serialize)]
+pub struct Shot {
+    pub path: String,
+    pub name: String,
+    pub thumb: String,
+}
+
+fn screenshot_dirs() -> Vec<std::path::PathBuf> {
+    let Some(home) = std::env::var_os("USERPROFILE").map(std::path::PathBuf::from) else { return Vec::new() };
+    vec![home.join(r"Pictures\Screenshots"), home.join(r"OneDrive\Pictures\Screenshots")]
+}
+
+/// Décode un PNG 8 bits en RGBA.
+fn decode_png(path: &std::path::Path) -> Option<(u32, u32, Vec<u8>)> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut decoder = png::Decoder::new(std::io::BufReader::new(file));
+    decoder.set_transformations(png::Transformations::EXPAND | png::Transformations::STRIP_16);
+    let mut reader = decoder.read_info().ok()?;
+    let mut buf = vec![0u8; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).ok()?;
+    let (w, h) = (info.width, info.height);
+    let rgba = match info.color_type {
+        png::ColorType::Rgba => buf[..(w * h * 4) as usize].to_vec(),
+        png::ColorType::Rgb => buf[..(w * h * 3) as usize].chunks_exact(3).flat_map(|p| [p[0], p[1], p[2], 255]).collect(),
+        png::ColorType::GrayscaleAlpha => buf[..(w * h * 2) as usize].chunks_exact(2).flat_map(|p| [p[0], p[0], p[0], p[1]]).collect(),
+        png::ColorType::Grayscale => buf[..(w * h) as usize].iter().flat_map(|&g| [g, g, g, 255]).collect(),
+        _ => return None,
+    };
+    Some((w, h, rgba))
+}
+
+fn thumbnail(w: u32, h: u32, rgba: &[u8], max_w: u32) -> Option<String> {
+    use base64::Engine;
+    let tw = max_w.min(w).max(1);
+    let th = ((h as u64 * tw as u64) / w as u64).max(1) as u32;
+    let mut out = Vec::with_capacity((tw * th * 4) as usize);
+    for y in 0..th {
+        let sy = (y as u64 * h as u64 / th as u64) as u32;
+        for x in 0..tw {
+            let sx = (x as u64 * w as u64 / tw as u64) as u32;
+            let i = ((sy * w + sx) * 4) as usize;
+            out.extend_from_slice(&rgba[i..i + 4]);
+        }
+    }
+    let mut bytes = Vec::new();
+    {
+        let mut enc = png::Encoder::new(&mut bytes, tw, th);
+        enc.set_color(png::ColorType::Rgba);
+        enc.set_depth(png::BitDepth::Eight);
+        let mut writer = enc.write_header().ok()?;
+        writer.write_image_data(&out).ok()?;
+    }
+    Some(format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
+}
+
+/// Les 6 dernières captures d'écran (dossier Images\Screenshots), avec miniature.
+pub fn screenshots() -> Vec<Shot> {
+    let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = screenshot_dirs()
+        .iter()
+        .filter_map(|d| std::fs::read_dir(d).ok())
+        .flatten()
+        .flatten()
+        .filter(|e| e.path().extension().is_some_and(|x| x.eq_ignore_ascii_case("png")))
+        .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+        .collect();
+    files.sort_by(|a, b| b.0.cmp(&a.0));
+    files
+        .into_iter()
+        .take(6)
+        .filter_map(|(_, path)| {
+            let (w, h, rgba) = decode_png(&path)?;
+            Some(Shot {
+                name: path.file_stem()?.to_string_lossy().to_string(),
+                thumb: thumbnail(w, h, &rgba, 220)?,
+                path: path.to_string_lossy().to_string(),
+            })
+        })
+        .collect()
+}
+
+fn is_screenshot(path: &str) -> bool {
+    let Ok(canon) = std::path::Path::new(path).canonicalize() else { return false };
+    screenshot_dirs().iter().filter_map(|d| d.canonicalize().ok()).any(|d| canon.starts_with(d))
+}
+
+/// Met une image dans le presse-papiers au format CF_DIB.
+fn copy_image(w: u32, h: u32, rgba: &[u8]) -> Result<(), String> {
+    use windows_sys::Win32::Foundation::GlobalFree;
+    use windows_sys::Win32::Graphics::Gdi::{BITMAPINFOHEADER, BI_RGB};
+    use windows_sys::Win32::System::DataExchange::{EmptyClipboard, SetClipboardData};
+    use windows_sys::Win32::System::Memory::{GlobalAlloc, GMEM_MOVEABLE};
+    const CF_DIB: u32 = 8;
+    let header = BITMAPINFOHEADER {
+        biSize: std::mem::size_of::<BITMAPINFOHEADER>() as u32,
+        biWidth: w as i32,
+        biHeight: h as i32, // de bas en haut
+        biPlanes: 1,
+        biBitCount: 32,
+        biCompression: BI_RGB,
+        biSizeImage: w * h * 4,
+        biXPelsPerMeter: 0,
+        biYPelsPerMeter: 0,
+        biClrUsed: 0,
+        biClrImportant: 0,
+    };
+    let hsize = std::mem::size_of::<BITMAPINFOHEADER>();
+    let total = hsize + (w * h * 4) as usize;
+    unsafe {
+        if OpenClipboard(std::ptr::null_mut()) == 0 {
+            return Err("Presse-papiers occupé.".into());
+        }
+        EmptyClipboard();
+        let mem = GlobalAlloc(GMEM_MOVEABLE, total);
+        if mem.is_null() {
+            CloseClipboard();
+            return Err("Mémoire insuffisante.".into());
+        }
+        let dst = GlobalLock(mem) as *mut u8;
+        std::ptr::copy_nonoverlapping((&header as *const BITMAPINFOHEADER).cast::<u8>(), dst, hsize);
+        let px = dst.add(hsize);
+        for y in 0..h {
+            let src_row = ((h - 1 - y) * w * 4) as usize;
+            for x in 0..w as usize {
+                let s = src_row + x * 4;
+                let d = (y * w * 4) as usize + x * 4;
+                *px.add(d) = rgba[s + 2];
+                *px.add(d + 1) = rgba[s + 1];
+                *px.add(d + 2) = rgba[s];
+                *px.add(d + 3) = rgba[s + 3];
+            }
+        }
+        GlobalUnlock(mem);
+        let ok = !SetClipboardData(CF_DIB, mem).is_null();
+        if !ok {
+            GlobalFree(mem);
+        }
+        CloseClipboard();
+        if ok {
+            Ok(())
+        } else {
+            Err("Copie de l'image impossible.".into())
+        }
+    }
+}
+
+fn paste_into_target() {
     unsafe {
         let target = TARGET.load(Ordering::Relaxed) as HWND;
         if !target.is_null() {
@@ -137,6 +279,43 @@ pub fn insert(text: &str) -> Result<(), String> {
     unsafe {
         SendInput(inputs.len() as u32, inputs.as_ptr(), std::mem::size_of::<INPUT>() as i32);
     }
+}
+
+/// Colle une capture d'écran dans l'appli d'origine.
+pub fn insert_image(path: &str) -> Result<(), String> {
+    if !is_screenshot(path) {
+        return Err("Capture introuvable.".into());
+    }
+    let (w, h, rgba) = decode_png(std::path::Path::new(path)).ok_or("Image illisible.")?;
+    RECORD.store(false, Ordering::Relaxed);
+    copy_image(w, h, &rgba)?;
+    paste_into_target();
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(1200));
+        RECORD.store(true, Ordering::Relaxed);
+    });
+    Ok(())
+}
+
+/// Dictée : l'appli d'origine reprend la main et la saisie vocale de Windows
+/// (Win+H) s'ouvre, comme Rambler sur un Googlebook.
+pub fn dictate() {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{VK_H, VK_LWIN};
+    return_focus();
+    std::thread::sleep(Duration::from_millis(150));
+    let inputs = [key(VK_LWIN, false), key(VK_H, false), key(VK_H, true), key(VK_LWIN, true)];
+    unsafe {
+        SendInput(inputs.len() as u32, inputs.as_ptr(), std::mem::size_of::<INPUT>() as i32);
+    }
+}
+
+/// Rend la main à l'appli d'origine et y colle `text` (Ctrl+V simulé).
+/// Le contenu précédent du presse-papiers est remis ensuite.
+pub fn insert(text: &str) -> Result<(), String> {
+    let previous = read_clipboard_text();
+    RECORD.store(false, Ordering::Relaxed);
+    super::system::copy_text(text)?;
+    paste_into_target();
     std::thread::spawn(move || {
         std::thread::sleep(Duration::from_millis(500));
         if let Some(prev) = previous {

@@ -1,6 +1,7 @@
 // Fonds d'écran Material 3 dessinés sur canvas à partir du schéma de couleurs.
 // Le même dessin sert à l'écran et au fond d'écran Windows (Mode Googlebook).
 import { colors, currentWallpaper, isDark, onThemeChange, WALLPAPERS } from "./theme.js";
+import { loadUserImage, onUserWallpaper, userImage } from "./userwall.js";
 
 function hexA(hex, a) {
   const n = parseInt(hex.slice(1), 16);
@@ -37,7 +38,20 @@ function pill(ctx, cx, cy, w, h, angle) {
   ctx.restore();
 }
 
+/** Image « cover » : remplit l'écran en gardant les proportions. */
+function drawCover(ctx, img, w, h) {
+  const scale = Math.max(w / img.width, h / img.height);
+  const dw = img.width * scale;
+  const dh = img.height * scale;
+  ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+}
+
 const PATTERNS = {
+  image(ctx, w, h, c) {
+    const img = userImage();
+    if (img) drawCover(ctx, img, w, h);
+    else PATTERNS.aurora(ctx, w, h, c);
+  },
   aurora(ctx, w, h, c) {
     const m = Math.max(w, h);
     radial(ctx, w * 0.12, h * 0.88, m * 0.62, c.tertiaryContainer, 0.95);
@@ -116,12 +130,17 @@ export function paint(canvas, w, h, wallpaper = currentWallpaper(), dark = isDar
   (PATTERNS[wallpaper.pattern] ?? PATTERNS.aurora)(ctx, w, h, c);
 }
 
-/** PNG (base64, sans préfixe) du fond d'écran à la résolution de l'écran. */
-export function exportPng() {
+/**
+ * Fond d'écran pour Windows à la résolution de l'écran : { data (base64), ext }.
+ * JPEG pour une photo (plus léger), PNG pour les motifs.
+ */
+export function exportWallpaper() {
   const dpr = devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
   paint(canvas, Math.round(screen.width * dpr), Math.round(screen.height * dpr));
-  return canvas.toDataURL("image/png").split(",")[1];
+  const photo = currentWallpaper().pattern === "image";
+  const url = photo ? canvas.toDataURL("image/jpeg", 0.92) : canvas.toDataURL("image/png");
+  return { data: url.split(",")[1], ext: photo ? "jpg" : "png" };
 }
 
 /** Miniature pour le sélecteur. */
@@ -132,12 +151,16 @@ export function thumbnail(wallpaper, w = 176, h = 110) {
   return canvas;
 }
 
+/** Le fond courant est-il une photo ? (lisibilité de la barre du haut) */
+export const isPhoto = () => currentWallpaper().pattern === "image" && !!userImage();
+
 export function initWallpaper() {
   const canvas = document.querySelector("#wallpaper");
   let raf = 0;
   const draw = () => {
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => {
+      document.documentElement.classList.toggle("photo", isPhoto());
       const dpr = devicePixelRatio || 1;
       paint(canvas, Math.round(innerWidth * dpr), Math.round(innerHeight * dpr));
     });
@@ -145,6 +168,8 @@ export function initWallpaper() {
   draw();
   addEventListener("resize", draw);
   onThemeChange(draw);
+  onUserWallpaper(draw);
+  loadUserImage();
 }
 
 export { WALLPAPERS };

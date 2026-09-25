@@ -14,6 +14,7 @@ const body = $("#qi-body");
 const RECENT_KEY = "openbook.qi.recent";
 let cat = "all";
 let clipboard = [];
+let shots = [];
 let selected = 0;
 let busy = false;
 
@@ -158,6 +159,35 @@ function render() {
     }
   }
 
+  if ((cat === "all" && !q) || cat === "shots") {
+    const list = shots.slice(0, cat === "shots" ? 6 : 3);
+    if (list.length) {
+      const grid = document.createElement("div");
+      grid.className = "qi-shots";
+      for (const sh of list) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "qi-item qi-shot";
+        b.title = sh.name;
+        b.innerHTML = `<img alt="" src="${sh.thumb}">`;
+        const run = async () => {
+          busy = true;
+          await invoke("qi_insert_image", { path: sh.path }).catch(() => {});
+          setTimeout(() => (busy = false), 300);
+        };
+        b.addEventListener("click", run);
+        b._run = run;
+        grid.append(b);
+      }
+      parts.push(section("Captures d'écran récentes", grid));
+    } else if (cat === "shots") {
+      const p = document.createElement("p");
+      p.className = "qi-empty";
+      p.textContent = "Aucune capture pour l'instant. Windows les range dans Images › Captures d'écran (Win+Maj+S puis enregistrer, ou Impr. écran).";
+      parts.push(p);
+    }
+  }
+
   if (cat === "all" || cat === "date") {
     const wantDate = !q || /date|heure|jour|demain|auj|iso/.test(q);
     if (wantDate || cat === "date") {
@@ -206,7 +236,7 @@ function select(i) {
 function move(dir) {
   const all = items();
   const cur = all[selected];
-  if (cur?.classList.contains("qi-emo") && (dir === "up" || dir === "down")) {
+  if (cur?.matches(".qi-emo, .qi-shot") && (dir === "up" || dir === "down")) {
     const grid = cur.parentElement;
     const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
     const idx = [...grid.children].indexOf(cur);
@@ -228,6 +258,13 @@ async function open() {
     clipboard = [];
   }
   render();
+  // Les miniatures des captures arrivent ensuite (décodage côté Rust).
+  invoke("qi_screenshots")
+    .then((list) => {
+      shots = list ?? [];
+      if (!input.value) render();
+    })
+    .catch(() => {});
   $("#qi").classList.remove("show");
   requestAnimationFrame(() => $("#qi").classList.add("show"));
   setTimeout(() => input.focus(), 30);
@@ -242,7 +279,7 @@ addEventListener("keydown", (e) => {
   const map = { ArrowDown: "down", ArrowUp: "up", ArrowRight: "right", ArrowLeft: "left" };
   if (e.key === "Escape") return close();
   if (map[e.key]) {
-    const inEmoji = items()[selected]?.classList.contains("qi-emo");
+    const inEmoji = items()[selected]?.matches(".qi-emo, .qi-shot");
     if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !inEmoji) return;
     e.preventDefault();
     move(map[e.key]);
@@ -256,6 +293,11 @@ document.querySelectorAll(".qi-cat").forEach((b) =>
     input.focus();
   }),
 );
+$("#qi-dictate").addEventListener("click", () => {
+  busy = true;
+  invoke("qi_dictate").catch(() => {});
+  setTimeout(() => (busy = false), 400);
+});
 addEventListener("blur", () => setTimeout(() => !document.hasFocus() && close(), 150));
 listen("qi-open", open);
 

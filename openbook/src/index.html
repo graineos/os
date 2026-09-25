@@ -44,6 +44,11 @@
           <button id="qs-settings" class="icon-btn qs-gear" title="Paramètres OpenBook"><span class="icon" data-icon="settings"></span></button>
         </div>
       </div>
+      <label class="qs-slider" id="brightness-row" title="Luminosité de l'écran">
+        <span class="icon" data-icon="brightness"></span>
+        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité">
+        <span class="qs-slider-note" id="brightness-note">Géré par Windows</span>
+      </label>
       <div class="qs-tiles">
         <button class="tile" data-tile="dark" aria-pressed="false">
           <span class="icon" data-icon="dark"></span>
@@ -76,11 +81,6 @@
           <span class="tile-text"><span class="tile-label">Éclairage nocturne</span><span class="tile-state">Paramètres</span></span>
         </button>
       </div>
-      <label class="qs-slider" id="brightness-row" title="Luminosité de l'écran">
-        <span class="icon" data-icon="brightness"></span>
-        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité">
-        <span class="qs-slider-note" id="brightness-note">Géré par Windows</span>
-      </label>
       <div class="qs-slider" id="volume-row">
         <button id="volume-mute" class="icon-btn" title="Couper le son"><span class="icon" data-icon="volUp"></span></button>
         <input id="volume" type="range" min="0" max="100" value="50" aria-label="Volume">
@@ -186,8 +186,10 @@
     <div class="settings-body" tabindex="-1">
       <section id="set-wallpaper" class="set-section">
         <h3>Fond d'écran et style</h3>
-        <p class="set-hint">Les couleurs d'OpenBook sont tirées du fond d'écran (Material You).</p>
+        <p class="set-hint">Choisis un fond ou ta propre image : les couleurs d'OpenBook en sont tirées automatiquement (Material You).</p>
         <div id="wp-grid" class="wp-grid"></div>
+        <input id="wp-file" type="file" accept="image/*" hidden>
+        <button id="wp-choose" class="pill-btn text wp-choose"><span class="icon" data-icon="wallpaper"></span>Choisir une image sur l'ordinateur…</button>
         <div id="theme-mode" class="segmented" role="group" aria-label="Thème">
           <button data-mode="auto">Automatique</button>
           <button data-mode="light">Clair</button>
@@ -210,7 +212,7 @@
       </section>
       <section class="set-section set-about">
         <h3>À propos</h3>
-        <p class="set-hint">OpenBook 0.2.0 — launcher inspiré de Googlebook OS. Aucune appli tierce, aucun compte : tout reste sur cet ordinateur.</p>
+        <p class="set-hint">OpenBook 0.3.0 — launcher inspiré de Googlebook OS. Aucune appli tierce, aucun compte : tout reste sur cet ordinateur.</p>
       </section>
     </div>
   </dialog>

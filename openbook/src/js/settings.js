@@ -3,10 +3,11 @@
 // au premier lancement pour tout activer en un clic.
 import { svg } from "./icons.js";
 import { prefs, save } from "./store.js";
-import { accentPalette, isDark, setDark, setWallpaper, WALLPAPERS } from "./theme.js";
+import { accentPalette, customWallpaper, isDark, setDark, setWallpaper, WALLPAPERS } from "./theme.js";
 import { hasTauri, invoke } from "./tauri.js";
 import { closeAllPanels, notify, toast } from "./ui.js";
-import { exportPng, thumbnail } from "./wallpaper.js";
+import { importImage, userImage } from "./userwall.js";
+import { exportWallpaper, thumbnail } from "./wallpaper.js";
 
 const $ = (s) => document.querySelector(s);
 const dlg = $("#settings");
@@ -24,12 +25,14 @@ const GB_OPTIONS = [
 
 function gbOptions() {
   const g = prefs.googlebook;
+  const wall = g.wallpaper ? exportWallpaper() : null;
   return {
     theme: g.theme,
     dark: isDark(),
     accent: g.accent,
     palette: accentPalette(),
-    wallpaper: g.wallpaper ? exportPng() : null,
+    wallpaper: wall?.data ?? null,
+    wallpaperExt: wall?.ext ?? null,
     autohide: g.autohide,
     autostart: g.autostart,
   };
@@ -129,9 +132,54 @@ function renderFeatures() {
 
 /* ---------- Fond d'écran et thème ---------- */
 
+async function pickImage() {
+  const input = $("#wp-file");
+  input.value = "";
+  input.click();
+}
+
+async function onImagePicked(file) {
+  if (!file) return;
+  try {
+    const seed = await importImage(file);
+    prefs.customSeed = seed;
+    setWallpaper("custom");
+    renderWallpapers();
+    syncWindows();
+    toast("Fond d'écran appliqué, couleurs tirées de ton image", { icon: "palette", force: true });
+  } catch {
+    toast("Image illisible : choisis un fichier JPG, PNG ou WebP.", { force: true });
+  }
+}
+
 function renderWallpapers() {
   const grid = $("#wp-grid");
   grid.innerHTML = "";
+  // Vignette « Ton image » : l'image importée, ou le bouton pour en ajouter une.
+  const mine = document.createElement("button");
+  mine.className = "wp-item press";
+  const hasImage = !!(userImage() && prefs.customSeed);
+  mine.setAttribute("aria-pressed", String(hasImage && prefs.wallpaper === "custom"));
+  if (hasImage) {
+    mine.title = "Ton image";
+    mine.append(thumbnail(customWallpaper()));
+  } else {
+    mine.title = "Ajouter une image";
+    const add = document.createElement("span");
+    add.className = "wp-thumb wp-add";
+    add.innerHTML = svg("plus");
+    mine.append(add);
+  }
+  const label = document.createElement("span");
+  label.textContent = hasImage ? "Ton image" : "Ajouter une image";
+  mine.append(label);
+  mine.addEventListener("click", () => {
+    if (!hasImage || prefs.wallpaper === "custom") return pickImage();
+    setWallpaper("custom");
+    renderWallpapers();
+    syncWindows();
+  });
+  grid.append(mine);
   for (const wp of WALLPAPERS) {
     const b = document.createElement("button");
     b.className = "wp-item press";
@@ -176,6 +224,8 @@ export function initSettings() {
   $("#settings-close").addEventListener("click", () => dlg.close());
   dlg.addEventListener("click", (e) => e.target === dlg && dlg.close());
   $("#gb-apply").addEventListener("click", () => applyGooglebook());
+  $("#wp-file").addEventListener("change", (e) => onImagePicked(e.target.files?.[0]));
+  $("#wp-choose").addEventListener("click", pickImage);
   $("#gb-restore").addEventListener("click", restoreWindows);
   for (const b of document.querySelectorAll("#theme-mode button")) {
     b.addEventListener("click", () => {
