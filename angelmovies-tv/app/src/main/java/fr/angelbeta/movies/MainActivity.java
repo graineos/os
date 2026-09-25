@@ -103,8 +103,7 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
-        // Fenêtres « popup » acceptées : certains lecteurs exigent d'ouvrir une page de pub avant la
-        // vidéo. Elles s'affichent par-dessus (voir onCreateWindow) et Retour les ferme.
+        // Fenêtres « popup » (pages de pub) interceptées dans onCreateWindow : jamais affichées ni chargées.
         s.setSupportMultipleWindows(true);
         s.setJavaScriptCanOpenWindowsAutomatically(true);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
@@ -155,7 +154,9 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                openPopup(resultMsg);
+                // Le lecteur veut ouvrir une page de pub : on lui donne une fenêtre invisible qui ne
+                // charge rien (comme les bloqueurs de pub). Rien ne s'affiche, la vidéo se débloque.
+                fakePopup(resultMsg);
                 return true;
             }
 
@@ -320,36 +321,45 @@ public class MainActivity extends Activity {
         Toast.makeText(this, text, Toast.LENGTH_LONG).show();
     }
 
-    /** Page ouverte par un lecteur (souvent une pub à ouvrir pour débloquer la vidéo). */
-    private void openPopup(Message resultMsg) {
-        if (popup != null) closePopup();
+    /**
+     * Fausse fenêtre de pub : une vraie WebView (le lecteur reçoit bien une fenêtre ouverte) mais
+     * minuscule, transparente, et qui bloque tout chargement (aucune pub téléchargée). On simule
+     * ensuite « parti voir la pub, puis revenu » (perte puis retour du focus et de la visibilité),
+     * ce qu'attendent ces lecteurs avant de débloquer la vidéo.
+     */
+    private void fakePopup(Message resultMsg) {
+        closePopup();
         popup = new WebView(this);
-        WebSettings ps = popup.getSettings();
-        ps.setJavaScriptEnabled(true);
-        ps.setDomStorageEnabled(true);
-        ps.setSupportMultipleWindows(false);
-        ps.setJavaScriptCanOpenWindowsAutomatically(false);
+        popup.getSettings().setJavaScriptEnabled(false);
         popup.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String scheme = request.getUrl().getScheme() == null ? "" : request.getUrl().getScheme();
-                return !(scheme.equals("https") || scheme.equals("http")); // pas d'appli externe depuis une pub
+                return true; // aucune navigation
             }
-        });
-        popup.setWebChromeClient(new WebChromeClient() {
+
             @Override
-            public void onCloseWindow(WebView window) {
-                closePopup();
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // Page vide à la place de la pub : rien n'est téléchargé.
+                return new android.webkit.WebResourceResponse("text/html", "utf-8", new java.io.ByteArrayInputStream(new byte[0]));
             }
         });
-        popup.setBackgroundColor(Color.BLACK);
-        root.addView(popup, root.indexOfChild(cursor), new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        popup.setAlpha(0f);
+        popup.setFocusable(true);
+        popup.setFocusableInTouchMode(true);
+        root.addView(popup, 0, new FrameLayout.LayoutParams(1, 1));
         WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
         transport.setWebView(popup);
         resultMsg.sendToTarget();
-        hint("Page ouverte par le lecteur : appuie sur Retour pour revenir au film");
-        // Retour automatique au film au bout de 20 s si on ne fait rien.
-        ui.postDelayed(autoClosePopup, 20000);
+
+        // « Parti sur la pub » : la page perd le focus et devient cachée…
+        popup.requestFocus();
+        web.onPause();
+        // …puis « revenu » : focus et visibilité rendus, fenêtre de pub fermée.
+        ui.postDelayed(() -> {
+            web.onResume();
+            web.requestFocus();
+        }, 1800);
+        ui.postDelayed(autoClosePopup, 6000);
     }
 
     private final Runnable autoClosePopup = this::closePopup;
@@ -361,7 +371,10 @@ public class MainActivity extends Activity {
         popup = null;
         root.removeView(p);
         p.destroy();
-        web.requestFocus();
+        if (web != null) {
+            web.onResume();
+            web.requestFocus();
+        }
     }
 
     private void setCursorMode(boolean on, boolean announce) {
