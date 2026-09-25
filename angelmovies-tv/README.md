@@ -12,7 +12,7 @@ Le lecteur de Movix vient d'un autre site : on ne peut pas y naviguer avec les f
 - **Menu / Info / Guide** : activer ou couper le pointeur n'importe où.
 - **Retour** : fermer le lecteur, puis la fiche.
 
-Aucune page de pub ne s'ouvre : l'appli refuse les fenêtres ouvertes par les lecteurs. Un lecteur qui exige d'ouvrir une pub ne démarre donc pas : choisir une autre source (lien « Choisir une autre source » du lecteur, ou menu ⋯ → Changer de source). La vidéo passe en plein écran et la session reste connectée.
+Aucune page de pub ne s'affiche. Quand un lecteur exige « Ouvrir la pub », l'appli lui fournit une fenêtre invisible qui ne charge rien (comme un bloqueur de pub), puis simule le retour sur le film : la vidéo se débloque sans pub. Si un lecteur résiste quand même, choisir une autre source (lien du lecteur, ou menu ⋯ → Changer de source). La vidéo passe en plein écran et la session reste connectée.
 
 - Téléchargement direct : **https://angel-beta.fr/apk**. Ce lien redirige vers l'APK de la release `angel-movies-tv`.
 - Guide d'installation selon l'appareil : **https://angel-beta.fr/films-tv**.
