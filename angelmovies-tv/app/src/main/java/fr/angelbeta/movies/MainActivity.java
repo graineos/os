@@ -25,7 +25,11 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.os.Message;
+import android.view.Gravity;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 /**
  * Angel Movies pour téléviseurs (Google TV, Android TV, Fire TV), tablettes et téléphones :
@@ -47,13 +51,21 @@ public class MainActivity extends Activity {
     private WebChromeClient.CustomViewCallback fullscreenCallback;
     private CursorView cursor;
     private boolean cursorMode;
+    /** Pointeur activé à la main (Menu, appui long sur OK) : reste actif hors du lecteur. */
+    private boolean cursorManual;
+    private boolean playerOpen;
+    /** Page de pub ouverte par un lecteur (fenêtre « popup ») : affichée par-dessus, Retour la ferme. */
+    private WebView popup;
+    private View splash;
+    private ProgressBar progress;
+    private boolean centerLong;
     private final Handler ui = new Handler(Looper.getMainLooper());
 
     /** Pont appelé par la page : le lecteur intégré s'ouvre ou se ferme. */
     public class Bridge {
         @JavascriptInterface
         public void setPlayerOpen(boolean open) {
-            ui.post(() -> setCursorMode(open, false));
+            ui.post(() -> onPlayer(open));
         }
     }
 
@@ -67,6 +79,17 @@ public class MainActivity extends Activity {
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#141414"));
         root.addView(web, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Écran de démarrage (le site met quelques secondes à charger sur une clé TV).
+        splash = buildSplash();
+        root.addView(splash, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        // Fine barre de chargement en haut, comme un navigateur.
+        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress.setMax(100);
+        progress.setProgressTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#E50914")));
+        FrameLayout.LayoutParams pl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int) (4 * getResources().getDisplayMetrics().density));
+        pl.gravity = Gravity.TOP;
+        root.addView(progress, pl);
+
         cursor = new CursorView(this);
         cursor.setVisibility(View.GONE);
         root.addView(cursor, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -80,8 +103,14 @@ public class MainActivity extends Activity {
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
-        s.setSupportMultipleWindows(false); // les liens « nouvel onglet » restent dans l'appli
-        s.setJavaScriptCanOpenWindowsAutomatically(false);
+        // Fenêtres « popup » acceptées : certains lecteurs exigent d'ouvrir une page de pub avant la
+        // vidéo. Elles s'affichent par-dessus (voir onCreateWindow) et Retour les ferme.
+        s.setSupportMultipleWindows(true);
+        s.setJavaScriptCanOpenWindowsAutomatically(true);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        if (Build.VERSION.SDK_INT >= 23) s.setOffscreenPreRaster(true); // défilement plus fluide
+        if (Build.VERSION.SDK_INT >= 26) web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT, true);
+        web.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         s.setUserAgentString(s.getUserAgentString() + " AngelMoviesTV/1");
 
         web.addJavascriptInterface(new Bridge(), "AngelTV");
@@ -106,12 +135,30 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void onPageFinished(WebView view, String url) {
+                hideSplash();
+            }
+
+            @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) view.loadDataWithBaseURL(HOME, OFFLINE_HTML, "text/html", "utf-8", null);
             }
         });
 
         web.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                progress.setProgress(newProgress);
+                progress.setVisibility(newProgress >= 100 ? View.GONE : View.VISIBLE);
+                if (newProgress >= 80) hideSplash();
+            }
+
+            @Override
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                openPopup(resultMsg);
+                return true;
+            }
+
             // Vidéo en plein écran (bouton plein écran du lecteur).
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -136,6 +183,7 @@ public class MainActivity extends Activity {
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
         else web.loadUrl(HOME);
         immersive();
+        ui.postDelayed(watchPlayer, 1500);
     }
 
     private void exitFullscreen() {
@@ -174,15 +222,28 @@ public class MainActivity extends Activity {
         int code = event.getKeyCode();
         boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
 
-        // Touche Menu (ou ≡) : active / coupe le pointeur n'importe où.
-        if (code == KeyEvent.KEYCODE_MENU) {
-            if (!down) setCursorMode(!cursorMode, true);
+        // Touche Menu (≡), Info ou Guide : active / coupe le pointeur n'importe où.
+        if (code == KeyEvent.KEYCODE_MENU || code == KeyEvent.KEYCODE_INFO || code == KeyEvent.KEYCODE_GUIDE) {
+            if (!down) toggleCursor();
             return true;
+        }
+        // Pointeur actif : appui long sur OK (présent sur toutes les télécommandes) pour le couper.
+        // (En mode normal, OK reste réservé au clic : le pointeur s'active tout seul dans le lecteur.)
+        boolean ok = cursorMode && (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER);
+        if (ok && down && event.getRepeatCount() == 0) centerLong = false;
+        if (ok && down && event.getRepeatCount() >= 4) { // tenu environ 0,6 s
+            if (!centerLong) { centerLong = true; toggleCursor(); }
+            return true;
+        }
+        if (ok && centerLong) {
+            if (!down) centerLong = false;
+            return true; // l'appui long ne clique pas
         }
         if (cursorMode && fullscreenView == null && handleCursorKey(event, code, down)) return true;
 
         if (code == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
             if (fullscreenView != null) { exitFullscreen(); return true; }
+            if (popup != null) { closePopup(); return true; }
             // La page ferme d'abord ce qui est ouvert (lecteur, fiche, swipe…), du plus récent au plus ancien.
             web.evaluateJavascript(
                 "(function(){if(window.__angelBack&&window.__angelBack())return 'closed';"
@@ -201,11 +262,113 @@ public class MainActivity extends Activity {
         return super.dispatchKeyEvent(event);
     }
 
+    private void onPlayer(boolean open) {
+        if (open == playerOpen) return;
+        playerOpen = open;
+        if (open && !cursorMode) {
+            setCursorMode(true, false);
+            hint("Pointeur : flèches pour viser, OK pour cliquer, Retour pour quitter");
+        } else if (!open && cursorMode && !cursorManual) {
+            setCursorMode(false, false);
+        }
+    }
+
+    private void toggleCursor() {
+        cursorManual = !cursorMode;
+        setCursorMode(!cursorMode, true);
+    }
+
+    /**
+     * Détection du lecteur par l'appli elle-même (en plus du signal envoyé par la page) : le
+     * pointeur s'active dès que le lecteur intégré est à l'écran, même avec une page en cache.
+     */
+    private final Runnable watchPlayer = new Runnable() {
+        @Override
+        public void run() {
+            if (web != null && popup == null) {
+                web.evaluateJavascript("!!document.querySelector('[data-movix-portal]')", r -> onPlayer("true".equals(r)));
+            }
+            ui.postDelayed(this, 1000);
+        }
+    };
+
+    private View buildSplash() {
+        FrameLayout box = new FrameLayout(this);
+        box.setBackgroundColor(Color.parseColor("#141414"));
+        TextView title = new TextView(this);
+        title.setText("ANGEL MOVIES");
+        title.setTextColor(Color.parseColor("#E50914"));
+        title.setTextSize(42);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setLetterSpacing(0.08f);
+        FrameLayout.LayoutParams tl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+        box.addView(title, tl);
+        ProgressBar spin = new ProgressBar(this);
+        spin.setIndeterminateTintList(android.content.res.ColorStateList.valueOf(Color.WHITE));
+        FrameLayout.LayoutParams sl = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
+        sl.bottomMargin = (int) (72 * getResources().getDisplayMetrics().density);
+        box.addView(spin, sl);
+        return box;
+    }
+
+    private void hideSplash() {
+        if (splash == null || splash.getVisibility() == View.GONE) return;
+        splash.animate().alpha(0f).setDuration(250).withEndAction(() -> splash.setVisibility(View.GONE)).start();
+    }
+
+    private void hint(String text) {
+        Toast.makeText(this, text, Toast.LENGTH_LONG).show();
+    }
+
+    /** Page ouverte par un lecteur (souvent une pub à ouvrir pour débloquer la vidéo). */
+    private void openPopup(Message resultMsg) {
+        if (popup != null) closePopup();
+        popup = new WebView(this);
+        WebSettings ps = popup.getSettings();
+        ps.setJavaScriptEnabled(true);
+        ps.setDomStorageEnabled(true);
+        ps.setSupportMultipleWindows(false);
+        ps.setJavaScriptCanOpenWindowsAutomatically(false);
+        popup.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                String scheme = request.getUrl().getScheme() == null ? "" : request.getUrl().getScheme();
+                return !(scheme.equals("https") || scheme.equals("http")); // pas d'appli externe depuis une pub
+            }
+        });
+        popup.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onCloseWindow(WebView window) {
+                closePopup();
+            }
+        });
+        popup.setBackgroundColor(Color.BLACK);
+        root.addView(popup, root.indexOfChild(cursor), new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+        transport.setWebView(popup);
+        resultMsg.sendToTarget();
+        hint("Page ouverte par le lecteur : appuie sur Retour pour revenir au film");
+        // Retour automatique au film au bout de 20 s si on ne fait rien.
+        ui.postDelayed(autoClosePopup, 20000);
+    }
+
+    private final Runnable autoClosePopup = this::closePopup;
+
+    private void closePopup() {
+        ui.removeCallbacks(autoClosePopup);
+        if (popup == null) return;
+        WebView p = popup;
+        popup = null;
+        root.removeView(p);
+        p.destroy();
+        web.requestFocus();
+    }
+
     private void setCursorMode(boolean on, boolean announce) {
         cursorMode = on;
         cursor.setVisibility(on ? View.VISIBLE : View.GONE);
         cursor.invalidate();
-        if (announce) Toast.makeText(this, on ? "Pointeur activé : flèches pour déplacer, OK pour cliquer" : "Pointeur désactivé", Toast.LENGTH_SHORT).show();
+        if (announce) Toast.makeText(this, on ? "Pointeur activé : flèches pour viser, OK pour cliquer (appui long sur OK pour le couper)" : "Pointeur désactivé", Toast.LENGTH_SHORT).show();
     }
 
     /** Flèches : déplacent le pointeur (de plus en plus vite si on reste appuyé) ; OK : touche l'écran. */
@@ -221,7 +384,8 @@ public class MainActivity extends Activity {
             case KeyEvent.KEYCODE_DPAD_CENTER:
             case KeyEvent.KEYCODE_ENTER:
             case KeyEvent.KEYCODE_NUMPAD_ENTER:
-                if (event.getRepeatCount() == 0) touch(down ? MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP);
+                // Toucher complet au relâchement : un appui long reste disponible pour couper le pointeur.
+                if (!down) { touch(MotionEvent.ACTION_DOWN); touch(MotionEvent.ACTION_UP); }
                 cursor.pressed = down;
                 cursor.invalidate();
                 return true;
@@ -249,7 +413,7 @@ public class MainActivity extends Activity {
         if (action == MotionEvent.ACTION_DOWN) touchDownAt = now;
         MotionEvent ev = MotionEvent.obtain(touchDownAt, now, action, cursor.x, cursor.y, 0);
         ev.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-        web.dispatchTouchEvent(ev);
+        root.dispatchTouchEvent(ev);
         ev.recycle();
     }
 
@@ -268,7 +432,7 @@ public class MainActivity extends Activity {
     private void dispatch(long downTime, long time, int action, float x, float y) {
         MotionEvent ev = MotionEvent.obtain(downTime, time, action, x, y, 0);
         ev.setSource(InputDevice.SOURCE_TOUCHSCREEN);
-        web.dispatchTouchEvent(ev);
+        root.dispatchTouchEvent(ev);
         ev.recycle();
     }
 
@@ -294,6 +458,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        ui.removeCallbacksAndMessages(null);
+        closePopup();
         root.removeAllViews();
         web.destroy();
         super.onDestroy();
