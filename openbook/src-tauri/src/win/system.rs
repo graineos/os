@@ -1,4 +1,4 @@
-//! Presse-papiers, volume et luminosité.
+//! Presse-papiers et luminosité.
 
 use std::os::windows::process::CommandExt;
 use std::process::Command;
@@ -7,10 +7,6 @@ use std::ptr::null_mut;
 use windows_sys::Win32::System::DataExchange::{CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData};
 use windows_sys::Win32::Foundation::GlobalFree;
 use windows_sys::Win32::System::Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE};
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_VOLUME_DOWN, VK_VOLUME_MUTE,
-    VK_VOLUME_UP,
-};
 
 use super::wide;
 
@@ -52,25 +48,6 @@ pub fn copy_text(text: &str) -> Result<(), String> {
             Err("Copie impossible.".into())
         }
     }
-}
-
-/// Touches multimédia : Windows affiche son propre indicateur de volume.
-pub fn volume(action: &str) -> Result<(), String> {
-    let vk = match action {
-        "up" => VK_VOLUME_UP,
-        "down" => VK_VOLUME_DOWN,
-        "mute" => VK_VOLUME_MUTE,
-        _ => return Err("Action inconnue.".into()),
-    };
-    let key = |flags| INPUT {
-        r#type: INPUT_KEYBOARD,
-        Anonymous: INPUT_0 { ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 } },
-    };
-    let inputs = [key(0), key(KEYEVENTF_KEYUP)];
-    unsafe {
-        SendInput(inputs.len() as u32, inputs.as_ptr(), std::mem::size_of::<INPUT>() as i32);
-    }
-    Ok(())
 }
 
 fn powershell(script: &str) -> Option<String> {

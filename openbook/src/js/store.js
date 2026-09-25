@@ -11,8 +11,8 @@ const DEFAULTS = {
   desktop: [], // raccourcis : { id, x, y }
   widgets: null, // null = widgets par défaut au premier lancement
   weather: null, // { lat, lon, name }
-  features: { quickInsert: true, magicPointer: true, glowbar: true },
-  googlebook: { applied: false, theme: true, accent: true, wallpaper: true, autohide: true },
+  features: { quickInsert: true, magicPointer: true, glowbar: true, windowsKey: true },
+  googlebook: { applied: false, theme: true, accent: true, wallpaper: true, autohide: true, autostart: true },
   notifications: [],
   welcomed: false,
 };
@@ -20,7 +20,13 @@ const DEFAULTS = {
 function load() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY) ?? "{}");
-    return { ...DEFAULTS, ...raw };
+    // Les objets de réglages gagnent les nouvelles options des mises à jour.
+    return {
+      ...DEFAULTS,
+      ...raw,
+      features: { ...DEFAULTS.features, ...raw.features },
+      googlebook: { ...DEFAULTS.googlebook, ...raw.googlebook },
+    };
   } catch {
     return { ...DEFAULTS };
   }

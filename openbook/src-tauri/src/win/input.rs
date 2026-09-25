@@ -1,7 +1,9 @@
 //! Entrées globales :
-//! - Quick Insert : la touche Verr. Maj ouvre la recherche d'OpenBook
-//!   (Maj + Verr. Maj garde le comportement normal). Seule cette touche
-//!   est examinée ; aucune autre frappe n'est lue ni enregistrée.
+//! - Quick Insert : Verr. Maj ouvre Quick Insert (Maj + Verr. Maj garde les
+//!   majuscules).
+//! - Touche Windows seule : lanceur OpenBook ; Win+Tab : Vue d'ensemble. Les
+//!   autres raccourcis Windows (Win+E, Win+L…) restent intacts.
+//!   Seules ces touches sont examinées ; aucune frappe n'est lue ni enregistrée.
 //! - Magic Pointer : secouer la souris n'importe où ouvre la bulle Gemini.
 
 use std::collections::VecDeque;
@@ -13,7 +15,10 @@ use std::time::{Duration, Instant};
 
 use windows_sys::Win32::Foundation::{LPARAM, LRESULT, POINT, WPARAM};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CAPITAL, VK_SHIFT};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+    GetAsyncKeyState, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VK_CAPITAL, VK_LWIN,
+    VK_RWIN, VK_SHIFT, VK_TAB,
+};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, DispatchMessageW, GetCursorPos, GetMessageW, SetWindowsHookExW, TranslateMessage, HC_ACTION,
     KBDLLHOOKSTRUCT, LLKHF_INJECTED, MSG, WH_KEYBOARD_LL, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
@@ -21,42 +26,106 @@ use windows_sys::Win32::UI::WindowsAndMessaging::{
 
 pub static QUICK_INSERT: AtomicBool = AtomicBool::new(true);
 pub static MAGIC_POINTER: AtomicBool = AtomicBool::new(true);
+/// Touche Windows seule → lanceur OpenBook, Win+Tab → Vue d'ensemble.
+pub static WINDOWS_KEY: AtomicBool = AtomicBool::new(true);
 
-static CAPS_SENDER: OnceLock<Sender<()>> = OnceLock::new();
+#[derive(Clone, Copy, Debug)]
+pub enum Hotkey {
+    /// Verr. Maj (sans Maj) : Quick Insert.
+    QuickInsert,
+    /// Touche Windows appuyée seule : lanceur.
+    Launcher,
+    /// Win+Tab : Vue d'ensemble.
+    Overview,
+}
+
+static SENDER: OnceLock<Sender<Hotkey>> = OnceLock::new();
 static CAPS_DOWN: AtomicBool = AtomicBool::new(false);
+static WIN_DOWN: AtomicBool = AtomicBool::new(false);
+static WIN_COMBO: AtomicBool = AtomicBool::new(false);
+static WIN_SWALLOWED: AtomicBool = AtomicBool::new(false);
+
+/// Touche virtuelle non attribuée : glissée avant le relâchement de la touche
+/// Windows pour que Windows n'ouvre pas le menu Démarrer.
+const VK_MASK: u16 = 0xE8;
+
+fn emit(h: Hotkey) {
+    if let Some(tx) = SENDER.get() {
+        let _ = tx.send(h);
+    }
+}
+
+fn press(vk: u16, up: bool) -> INPUT {
+    INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT { wVk: vk, wScan: 0, dwFlags: if up { KEYEVENTF_KEYUP } else { 0 }, time: 0, dwExtraInfo: 0 },
+        },
+    }
+}
 
 unsafe extern "system" fn keyboard_proc(code: i32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {
-    if code == HC_ACTION as i32 && QUICK_INSERT.load(Ordering::Relaxed) {
+    if code == HC_ACTION as i32 {
         let k = &*(lparam as *const KBDLLHOOKSTRUCT);
-        let shift = GetAsyncKeyState(VK_SHIFT as i32) < 0;
-        if k.vkCode == VK_CAPITAL as u32 && k.flags & LLKHF_INJECTED == 0 && !shift {
-            match wparam as u32 {
-                WM_KEYDOWN | WM_SYSKEYDOWN => {
-                    // Un seul événement par appui, même si la touche reste enfoncée.
-                    if !CAPS_DOWN.swap(true, Ordering::Relaxed) {
-                        if let Some(tx) = CAPS_SENDER.get() {
-                            let _ = tx.send(());
-                        }
-                    }
-                }
-                WM_KEYUP | WM_SYSKEYUP => CAPS_DOWN.store(false, Ordering::Relaxed),
-                _ => {}
+        let injected = k.flags & LLKHF_INJECTED != 0;
+        let down = matches!(wparam as u32, WM_KEYDOWN | WM_SYSKEYDOWN);
+        let up = matches!(wparam as u32, WM_KEYUP | WM_SYSKEYUP);
+        let vk = k.vkCode as u16;
+
+        // Verr. Maj → Quick Insert (Maj + Verr. Maj garde les majuscules).
+        if vk == VK_CAPITAL && !injected && QUICK_INSERT.load(Ordering::Relaxed) && GetAsyncKeyState(VK_SHIFT as i32) >= 0 {
+            if down && !CAPS_DOWN.swap(true, Ordering::Relaxed) {
+                emit(Hotkey::QuickInsert);
             }
-            return 1; // Verr. Maj n'est pas basculé
+            if up {
+                CAPS_DOWN.store(false, Ordering::Relaxed);
+            }
+            return 1;
+        }
+
+        if !injected && WINDOWS_KEY.load(Ordering::Relaxed) {
+            let is_win = vk == VK_LWIN || vk == VK_RWIN;
+            if is_win && down {
+                if !WIN_DOWN.swap(true, Ordering::Relaxed) {
+                    WIN_COMBO.store(false, Ordering::Relaxed);
+                    WIN_SWALLOWED.store(false, Ordering::Relaxed);
+                }
+            } else if is_win && up {
+                WIN_DOWN.store(false, Ordering::Relaxed);
+                let alone = !WIN_COMBO.load(Ordering::Relaxed);
+                if alone || WIN_SWALLOWED.load(Ordering::Relaxed) {
+                    // Masque + relâchement réinjecté : le menu Démarrer ne s'ouvre pas.
+                    let inputs = [press(VK_MASK, false), press(VK_MASK, true), press(vk, true)];
+                    SendInput(inputs.len() as u32, inputs.as_ptr(), std::mem::size_of::<INPUT>() as i32);
+                    if alone {
+                        emit(Hotkey::Launcher);
+                    }
+                    return 1;
+                }
+            } else if down && WIN_DOWN.load(Ordering::Relaxed) {
+                WIN_COMBO.store(true, Ordering::Relaxed);
+                if vk == VK_TAB {
+                    WIN_SWALLOWED.store(true, Ordering::Relaxed);
+                    emit(Hotkey::Overview);
+                    return 1;
+                }
+            } else if up && vk == VK_TAB && WIN_SWALLOWED.load(Ordering::Relaxed) {
+                return 1;
+            }
         }
     }
     CallNextHookEx(null_mut(), code, wparam, lparam)
 }
 
-/// Appelle `on_press` à chaque appui sur Verr. Maj.
-pub fn watch_caps_lock(on_press: impl Fn() + Send + 'static) {
+/// Appelle `on_key` pour chaque raccourci global d'OpenBook.
+pub fn watch_keys(on_key: impl Fn(Hotkey) + Send + 'static) {
     let (tx, rx) = std::sync::mpsc::channel();
-    if CAPS_SENDER.set(tx).is_err() {
+    if SENDER.set(tx).is_err() {
         return;
     }
     std::thread::spawn(move || {
-        for () in rx {
-            on_press();
+        for h in rx {
+            on_key(h);
         }
     });
     std::thread::spawn(|| unsafe {

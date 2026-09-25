@@ -5,9 +5,39 @@ Il se superpose au bureau Windows et, en un clic, habille tout Windows aux coule
 
 ## Installation
 
-1. Télécharge `OpenBook_0.1.0_x64-setup.exe` dans la Release GitHub **openbook-v0.1.0**.
+1. Télécharge **[OpenBook-setup.exe](https://github.com/graineos/os/releases/latest/download/OpenBook-setup.exe)** (toujours la dernière version), ou depuis la page Labo d'angel-beta.fr.
 2. Lance-le : il s'installe sans droits administrateur. SmartScreen peut avertir, car l'appli n'est pas signée : « Informations complémentaires » puis « Exécuter quand même ».
-3. Au premier lancement, clique sur **Transformer Windows**. C'est tout.
+3. Au premier lancement, clique sur **Transformer Windows**. C'est tout : dès la prochaine ouverture de session, OpenBook s'affiche directement et Windows n'apparaît plus.
+
+## Nouveautés de la version 3
+
+| Fonction | Détail |
+|---|---|
+| Fond d'écran personnel | Paramètres OpenBook → « Ajouter une image » : ta photo devient le fond d'OpenBook et de Windows, et toutes les couleurs (Material You) en sont tirées automatiquement. L'image reste sur l'ordinateur. |
+| Fichiers sur le bureau | Comme sur un Googlebook : clic droit sur un fichier ou dossier dans le lanceur → « Ajouter au bureau ». |
+| Quick Insert | Captures d'écran récentes (collées comme image dans l'appli en cours) et bouton « Dicter » en bas à droite (saisie vocale de Windows, l'équivalent de Rambler). |
+| Réglages rapides | Luminosité en tête du panneau, comme sur Pixel (Android 16). |
+
+Disposition identique à Googlebook OS : heure et date en haut à gauche, réglages rapides et notifications en haut à droite, dock centré avec le lanceur, tiroir façon Pixel Launcher, bureau avec applis, widgets, fichiers et dossiers. Le bouton du lanceur reste un « O » : pas de logo Google.
+
+## Nouveautés de la version 2
+
+Reprises des comportements d'AOSP (barre des tâches de bureau d'Android, réglages rapides de SystemUI) et de ChromeOS (lanceur, Vue d'ensemble, Quick Insert), réimplémentés sur Windows. Le code propre à Googlebook OS n'est pas publié.
+
+| | Fonction | Détail |
+|---|---|---|
+| Surcouche totale | Ouverture au démarrage | OpenBook se lance à l'ouverture de session (option du Mode Googlebook, retirée par « Revenir à Windows »). |
+| | Touche Windows | La touche Windows seule ouvre le lanceur d'OpenBook au lieu du menu Démarrer ; Win+Tab ouvre la Vue d'ensemble. Win+E, Win+L, Win+V… restent intacts. |
+| Fenêtres façon Android | Barre fusionnée | Applis épinglées et fenêtres ouvertes regroupées par appli (Gmail, YouTube… reconnus même dans Chrome), indicateur de fenêtre active, clic pour afficher ou réduire. |
+| | Aperçus en direct | Au survol, miniatures en direct (DWM) des fenêtres de l'appli, avec fermeture. |
+| | Ancrage | Clic droit : ancrer à gauche/droite, agrandir, réduire, fermer. |
+| | Vue d'ensemble | Toutes les fenêtres en miniatures en direct, avec ancrage et fermeture. |
+| Lanceur ChromeOS | Recherche unifiée | Applis, fichiers (Bureau, Documents, Téléchargements, Images, Musique, Vidéos), 28 pages des Paramètres Windows, calculs, conversions (longueurs, masses, volumes, températures, vitesses, données), Google et Gemini. Navigation au clavier. |
+| | Continuer | Les fichiers récents de Windows en tête du lanceur. |
+| Réglages rapides réels | Wi-Fi et Bluetooth | Vraies bascules (API Radios), liste des réseaux Wi-Fi, connexion en un clic aux réseaux enregistrés. |
+| | Volume | Curseur réel du périphérique de sortie (Core Audio) et coupure du son. |
+| | Multimédia | Titre, artiste et pochette de la musique ou vidéo en cours, lecture/pause, précédent, suivant (toute appli compatible Windows). |
+| Quick Insert complet | Verr. Maj | Panneau près du curseur texte : emoji (recherche en français), historique du presse-papiers (en mémoire, 25 éléments), date et heure, calculs et conversions, inséré directement dans l'appli en cours. |
 
 ## Ce que fait OpenBook
 
@@ -19,7 +49,7 @@ Il se superpose au bureau Windows et, en un clic, habille tout Windows aux coule
 | 4 | Bureau | 8 fonds d'écran Material 3, raccourcis déplaçables, widgets Horloge, Coup d'œil, Météo (Open-Meteo), Recherche et Pense-bête, en 2 tailles. Clic droit ou appui long sur le bureau. |
 | 5 | Magic Pointer | Secoue la souris **n'importe où dans Windows** : une bulle « Demander à Gemini… » apparaît près du pointeur. La question est copiée, puis Gemini s'ouvre. |
 | 6 | Glowbar | Barre lumineuse en haut de l'écran : balayage au démarrage, pulsation pendant la bulle Gemini, niveau de batterie quand on branche le chargeur. |
-| 7 | Quick Insert | **Verr. Maj** ouvre la recherche d'OpenBook depuis n'importe quelle appli. Maj + Verr. Maj active toujours les majuscules. |
+| 7 | Quick Insert | **Verr. Maj** ouvre Quick Insert depuis n'importe quelle appli. Maj + Verr. Maj active toujours les majuscules. |
 | 8 | Mode Googlebook | Applique à Windows le thème clair/sombre, la couleur d'accent Material You, le même fond d'écran et masque la barre des tâches. **Réversible** : « Revenir à Windows » ou la désinstallation remettent tout comme avant. |
 
 Chaque fonction se désactive dans **Paramètres OpenBook**, via le rouage des réglages rapides ou le clic droit sur le bureau.
@@ -31,8 +61,6 @@ Chaque fonction se désactive dans **Paramètres OpenBook**, via le rouage des r
 - Tuile **Plein écran** désactivée : OpenBook laisse la barre des tâches et reste sous toutes les fenêtres, comme un fond d'écran interactif.
 - Une seule instance : relancer OpenBook ramène la fenêtre existante.
 
-Pour qu'OpenBook s'ouvre à chaque démarrage : `Win+R`, tape `shell:startup`, puis glisse-y le raccourci d'OpenBook du menu Démarrer.
-
 ## Ce qu'OpenBook modifie dans Windows (Mode Googlebook)
 
 Seulement pour ton compte (HKEY_CURRENT_USER), jamais sans ton clic, toujours sauvegardé avant :
@@ -43,6 +71,7 @@ Seulement pour ton compte (HKEY_CURRENT_USER), jamais sans ton clic, toujours sa
 | Couleur d'accent | `Explorer\Accent` (`AccentPalette`, `AccentColorMenu`, `StartColorMenu`), `DWM` (`AccentColor`, `ColorizationColor`), `Control Panel\Desktop\AutoColorization` |
 | Fond d'écran | image PNG dans `%APPDATA%\fr.graineos.openbook\`, `WallpaperStyle`, `TileWallpaper` |
 | Barre des tâches | masquage automatique (API `SHAppBarMessage`) |
+| Ouverture au démarrage | `Software\Microsoft\Windows\CurrentVersion\Run` : valeur `OpenBook` |
 
 Les valeurs d'origine sont stockées dans `%APPDATA%\fr.graineos.openbook\googlebook-backup.json`. `OpenBook.exe --restore` les remet ; le désinstalleur le lance automatiquement.
 
@@ -52,7 +81,9 @@ Les valeurs d'origine sont stockées dans `%APPDATA%\fr.graineos.openbook\google
 - « Continue on » avec un téléphone Android.
 - Les boîtes de dialogue anciennes de Windows, le Panneau de configuration et l'écran de connexion gardent leur style Windows.
 - La luminosité ne se règle que sur l'écran intégré d'un portable (pas sur un écran externe).
-- Wi-Fi, Bluetooth et éclairage nocturne ouvrent la page des Paramètres Windows correspondante.
+- L'éclairage nocturne et l'appairage Bluetooth ouvrent la page des Paramètres Windows correspondante ; un réseau Wi-Fi jamais utilisé se configure dans les Paramètres (mot de passe).
+- Les notifications des autres applis restent celles de Windows.
+- L'écran de connexion de Windows s'affiche toujours avant OpenBook.
 
 ## Structure
 
@@ -84,7 +115,8 @@ npm run demo          # http://localhost:4173/demo/
 
 La démo simule les commandes Windows : elles s'affichent dans l'encart en bas à droite, avec des boutons pour simuler la secousse, Verr. Maj et le chargeur. Ajoute `?clean` à l'URL pour masquer l'encart.
 
-Captures (serveur de démo lancé) : `npm run screenshots` (derrière un proxy : `NODE_USE_ENV_PROXY=1 npm run screenshots`).
+Tests (serveur de démo lancé) : `npm test` rejoue 126 vérifications d'interface.
+Captures : `npm run screenshots` (derrière un proxy : `NODE_USE_ENV_PROXY=1 npm run screenshots`).
 
 ## Développer sous Windows
 

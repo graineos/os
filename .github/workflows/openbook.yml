@@ -52,10 +52,22 @@ jobs:
           releaseName: OpenBook v__VERSION__
           releaseBody: |
             Launcher plein écran pour Windows inspiré de Googlebook OS.
-            Installe `OpenBook_*_x64-setup.exe` (sans droits administrateur) ou le `.msi`.
+            Installe `OpenBook-setup.exe` (sans droits administrateur) ou `OpenBook.msi`.
             Windows SmartScreen peut avertir : l'appli n'est pas signée. « Informations complémentaires » puis « Exécuter quand même ».
           releaseDraft: false
-          prerelease: true
+          prerelease: false
+
+      # Copies à nom fixe : https://github.com/graineos/os/releases/latest/download/OpenBook-setup.exe
+      # pointe toujours vers la dernière version (lien utilisé par la page Labo).
+      - name: Publier les installateurs à nom fixe
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          cp src-tauri/target/release/bundle/nsis/*-setup.exe OpenBook-setup.exe
+          cp src-tauri/target/release/bundle/msi/*.msi OpenBook.msi
+          gh release upload "openbook-v${version}" OpenBook-setup.exe OpenBook.msi --clobber --repo "${{ github.repository }}"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -6,7 +6,7 @@ import { build } from "esbuild";
 await build({
   stdin: {
     contents:
-      "export { argbFromHex, hexFromArgb, Hct, SchemeTonalSpot, MaterialDynamicColors } from '@material/material-color-utilities';",
+      "export { argbFromHex, argbFromRgb, hexFromArgb, Hct, SchemeTonalSpot, MaterialDynamicColors, QuantizerCelebi, Score } from '@material/material-color-utilities';",
     resolveDir: process.cwd(),
     loader: "js",
   },

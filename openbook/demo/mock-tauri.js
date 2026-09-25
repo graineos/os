@@ -29,11 +29,24 @@
     "Bloc-notes", "Calculatrice", "Paint", "Spotify", "VLC media player", "Word", "Excel",
     "Visual Studio Code", "Steam", "Discord", "Outil Capture d'écran", "Terminal",
   ].map((name) => ({ name, path: `C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\${name}.lnk` }));
+  const CHROME = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   let windows = [
-    { id: 101, title: "Bloc-notes — liste de courses.txt", exe: "C:\\Windows\\notepad.exe", active: false, minimized: false },
-    { id: 102, title: "Spotify Premium", exe: "C:\\Users\\angel\\AppData\\Roaming\\Spotify\\Spotify.exe", active: false, minimized: true },
-    { id: 103, title: "Explorateur de fichiers — Documents", exe: "C:\\Windows\\explorer.exe", active: false, minimized: false },
+    { id: 101, title: "Boîte de réception (3) - angel@gmail.com - Gmail", exe: CHROME, active: true, minimized: false },
+    { id: 102, title: "Lofi Girl - beats to relax/study to - YouTube", exe: CHROME, active: false, minimized: false },
+    { id: 103, title: "Documents", exe: "C:\\Windows\\explorer.exe", active: false, minimized: false },
+    { id: 104, title: "Téléchargements", exe: "C:\\Windows\\explorer.exe", active: false, minimized: true },
+    { id: 105, title: "Spotify Premium", exe: "C:\\Users\\angel\\AppData\\Roaming\\Spotify\\Spotify.exe", active: false, minimized: false },
+    { id: 106, title: "liste de courses.txt - Bloc-notes", exe: "C:\\Windows\\notepad.exe", active: false, minimized: false },
   ];
+  let volume = { level: 42, muted: false };
+  let radios = { wifi: true, bluetooth: false };
+  let media = { title: "Midnight City", artist: "M83", app: "Spotify.exe", playing: true, cover: null };
+  const HOME = "C:\\Users\\angel";
+  const FILES = [
+    ["Rapport annuel 2026.docx", "Documents"], ["Budget vacances.xlsx", "Documents"], ["CV Angel Leclerc.pdf", "Documents"],
+    ["Présentation OpenBook.pptx", "Documents"], ["Photo plage.jpg", "Pictures"], ["Facture EDF septembre.pdf", "Downloads"],
+    ["Notes réunion.txt", "Desktop"], ["Projet OpenDoor", "Documents"],
+  ].map(([name, folder]) => ({ name, folder, path: `${HOME}\\${folder}\\${name}`, dir: !name.includes("."), modified: 0 }));
   let googlebook = false;
 
   const commands = {
@@ -58,7 +71,64 @@
       log(`close_window → ${id}`);
     },
     copy_text: ({ text }) => log(`copy_text → « ${text} »`),
-    volume: ({ action }) => log(`volume → ${action}`),
+    volume_get: () => volume,
+    volume_set: ({ level, muted }) => {
+      if (level !== undefined) volume = { level, muted: false };
+      if (muted !== undefined) volume = { ...volume, muted };
+      log(`volume_set → ${JSON.stringify(volume)}`);
+    },
+    radios_state: () => radios,
+    radio_set: ({ kind, on }) => {
+      radios = { ...radios, [kind]: on };
+      log(`radio_set → ${kind} ${on ? "activé" : "coupé"}`);
+    },
+    wifi_networks: () => [
+      { ssid: "Livebox-Angel", signal: 92, secured: true, connected: true, profile: "Livebox-Angel" },
+      { ssid: "Freebox-Voisin", signal: 61, secured: true, connected: false, profile: null },
+      { ssid: "Café du coin", signal: 44, secured: false, connected: false, profile: "Café du coin" },
+    ],
+    wifi_connect: ({ profile }) => log(`wifi_connect → ${profile}`),
+    media_now: () => media,
+    media_control: ({ action }) => {
+      if (action === "toggle") media = { ...media, playing: !media.playing };
+      log(`media_control → ${action}`);
+    },
+    files_search: ({ query }) => FILES.filter((f) => f.name.toLowerCase().includes(query.toLowerCase())),
+    files_recent: () => FILES.slice(0, 5),
+    open_file: ({ path }) => log(`open_file → ${path}`),
+    set_thumbnails: ({ slots }) => log(`set_thumbnails → ${slots.length} miniature(s)`),
+    clear_thumbnails: () => {},
+    snap_window: ({ id, mode }) => {
+      if (mode === "min") windows = windows.map((w) => (w.id === id ? { ...w, minimized: true, active: false } : w));
+      log(`snap_window → ${id} ${mode}`);
+    },
+    qi_history: () => ["Rendez-vous jeudi 14 h au bureau", "https://angel-beta.fr/opendoor", "06 12 34 56 78"],
+    qi_clear: () => {},
+    qi_screenshots: () =>
+      [["#4285f4", "#34a853"], ["#ea4335", "#fbbc04"], ["#6f5bd6", "#1f7a8c"]].map(([a, b], i) => ({
+        path: `${HOME}\\Pictures\\Screenshots\\Capture d'écran ${i + 1}.png`,
+        name: `Capture d'écran ${i + 1}`,
+        thumb:
+          "data:image/svg+xml," +
+          encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="220" height="138"><defs><linearGradient id="g"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="220" height="138" fill="url(#g)"/><rect x="18" y="18" width="120" height="14" rx="7" fill="#fff" opacity=".8"/><rect x="18" y="42" width="184" height="78" rx="10" fill="#fff" opacity=".35"/></svg>`),
+      })),
+    qi_insert_image: ({ path }) => {
+      document.getElementById("qi").hidden = true;
+      log(`qi_insert_image → ${path} collée dans l'appli active`);
+    },
+    qi_dictate: () => {
+      document.getElementById("qi").hidden = true;
+      log("qi_dictate → saisie vocale Windows (Win+H)");
+    },
+    qi_insert: ({ text }) => {
+      document.getElementById("qi").hidden = true;
+      log(`qi_insert → « ${text} » collé dans l'appli active`);
+    },
+    qi_close: () => (document.getElementById("qi").hidden = true),
+    show_launcher: ({ query }) => {
+      document.getElementById("qi").hidden = true;
+      emit("launcher", query ?? "");
+    },
     get_brightness: () => 70,
     set_brightness: ({ level }) => log(`set_brightness → ${level} %`),
     googlebook_status: () => googlebook,
@@ -69,6 +139,7 @@
         options.accent && `accent ${options.palette[3]}`,
         options.wallpaper && `fond d'écran (${Math.round(options.wallpaper.length / 1024)} Ko)`,
         options.autohide && "barre des tâches masquée",
+        options.autostart && "ouverture au démarrage",
       ].filter(Boolean);
       log(`googlebook_apply → ${parts.join(", ")}`);
     },
@@ -94,7 +165,16 @@
       emit("bubble-open");
       emit("glow", "pulse-on");
     } else if (what === "caps") {
-      emit("quick-insert");
+      const q = document.getElementById("qi");
+      q.style.left = innerWidth / 2 - 220 + "px";
+      q.style.top = "140px";
+      q.hidden = false;
+      q.focus();
+      emit("qi-open");
+    } else if (what === "win") {
+      emit("launcher", "");
+    } else if (what === "wintab") {
+      emit("overview");
     } else if (what === "charge") {
       const glow = document.getElementById("glow").contentWindow;
       glow.document.querySelector("#bar").dispatchEvent(new CustomEvent("demo-battery", { detail: 0.64 }));

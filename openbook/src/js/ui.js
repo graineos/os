@@ -41,6 +41,7 @@ export function isOpen(el) {
 
 export function closeAllPanels() {
   [...openPanels].forEach(closePanel);
+  dispatchEvent(new CustomEvent("openbook:close-all"));
 }
 
 /* ---------- Menu contextuel ---------- */

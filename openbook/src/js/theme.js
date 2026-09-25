@@ -28,7 +28,13 @@ export const WALLPAPERS = [
   { id: "ardoise", name: "Ardoise", seed: "#51607a", pattern: "dunes" },
 ];
 
+/** Fond personnel : l'image de l'utilisateur, couleurs tirées de l'image. */
+export function customWallpaper() {
+  return { id: "custom", name: "Ton image", seed: prefs.customSeed ?? "#4285f4", pattern: "image" };
+}
+
 export function currentWallpaper() {
+  if (prefs.wallpaper === "custom" && prefs.customSeed) return customWallpaper();
   return WALLPAPERS.find((w) => w.id === prefs.wallpaper) ?? WALLPAPERS[0];
 }
 

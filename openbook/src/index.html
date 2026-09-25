@@ -44,6 +44,11 @@
           <button id="qs-settings" class="icon-btn qs-gear" title="Paramètres OpenBook"><span class="icon" data-icon="settings"></span></button>
         </div>
       </div>
+      <label class="qs-slider" id="brightness-row" title="Luminosité de l'écran">
+        <span class="icon" data-icon="brightness"></span>
+        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité">
+        <span class="qs-slider-note" id="brightness-note">Géré par Windows</span>
+      </label>
       <div class="qs-tiles">
         <button class="tile" data-tile="dark" aria-pressed="false">
           <span class="icon" data-icon="dark"></span>
@@ -57,30 +62,54 @@
           <span class="icon" data-icon="fullscreen"></span>
           <span class="tile-text"><span class="tile-label">Plein écran</span><span class="tile-state"></span></span>
         </button>
-        <button class="tile link" data-settings="wifi">
-          <span class="icon" data-icon="wifi"></span>
-          <span class="tile-text"><span class="tile-label">Internet</span><span class="tile-state" id="tile-net"></span></span>
-        </button>
-        <button class="tile link" data-settings="bluetooth">
-          <span class="icon" data-icon="bluetooth"></span>
-          <span class="tile-text"><span class="tile-label">Bluetooth</span><span class="tile-state">Paramètres</span></span>
-        </button>
+        <div class="tile split" data-radio="wifi" aria-pressed="false">
+          <button class="tile-main" title="Activer ou couper le Wi-Fi">
+            <span class="icon" data-icon="wifi"></span>
+            <span class="tile-text"><span class="tile-label">Wi-Fi</span><span class="tile-state" id="tile-net"></span></span>
+          </button>
+          <button class="tile-more" data-detail="wifi" title="Réseaux Wi-Fi"><span class="icon" data-icon="chevron"></span></button>
+        </div>
+        <div class="tile split" data-radio="bluetooth" aria-pressed="false">
+          <button class="tile-main" title="Activer ou couper le Bluetooth">
+            <span class="icon" data-icon="bluetooth"></span>
+            <span class="tile-text"><span class="tile-label">Bluetooth</span><span class="tile-state"></span></span>
+          </button>
+          <button class="tile-more" data-settings="bluetooth" title="Appareils Bluetooth"><span class="icon" data-icon="chevron"></span></button>
+        </div>
         <button class="tile link" data-settings="nightlight">
           <span class="icon" data-icon="nightlight"></span>
           <span class="tile-text"><span class="tile-label">Éclairage nocturne</span><span class="tile-state">Paramètres</span></span>
         </button>
       </div>
-      <label class="qs-slider" id="brightness-row" title="Luminosité de l'écran">
-        <span class="icon" data-icon="brightness"></span>
-        <input id="brightness" type="range" min="0" max="100" value="70" disabled aria-label="Luminosité">
-        <span class="qs-slider-note" id="brightness-note">Géré par Windows</span>
-      </label>
-      <div class="qs-volume" role="group" aria-label="Volume">
-        <span class="icon" data-icon="volUp"></span>
-        <span class="qs-volume-label">Volume</span>
-        <button class="icon-btn tonal" data-volume="down" title="Baisser le volume"><span class="icon" data-icon="minus"></span></button>
-        <button class="icon-btn tonal" data-volume="mute" title="Couper le son"><span class="icon" data-icon="volMute"></span></button>
-        <button class="icon-btn tonal" data-volume="up" title="Monter le volume"><span class="icon" data-icon="plus"></span></button>
+      <div class="qs-slider" id="volume-row">
+        <button id="volume-mute" class="icon-btn" title="Couper le son"><span class="icon" data-icon="volUp"></span></button>
+        <input id="volume" type="range" min="0" max="100" value="50" aria-label="Volume">
+        <span class="qs-slider-note" id="volume-note">—</span>
+      </div>
+
+      <!-- Détail Wi-Fi (remplace les tuiles) -->
+      <div id="wifi-detail" class="qs-detail" hidden>
+        <div class="qs-detail-head">
+          <button class="icon-btn" data-detail-back title="Retour"><span class="icon" data-icon="back"></span></button>
+          <span>Wi-Fi</span>
+          <input type="checkbox" class="switch" id="wifi-switch" aria-label="Wi-Fi">
+        </div>
+        <ul id="wifi-list" class="wifi-list"></ul>
+        <button class="text-btn" data-settings="wifi">Plus de paramètres Wi-Fi</button>
+      </div>
+    </div>
+
+    <!-- Lecteur multimédia -->
+    <div id="media" class="qs-card qs-media" hidden>
+      <div class="media-cover" id="media-cover"></div>
+      <div class="media-text">
+        <div class="media-title" id="media-title"></div>
+        <div class="media-artist" id="media-artist"></div>
+      </div>
+      <div class="media-controls">
+        <button class="icon-btn" data-media="previous" title="Précédent"><span class="icon" data-icon="prev"></span></button>
+        <button class="icon-btn filled" data-media="toggle" id="media-toggle" title="Lecture / pause"><span class="icon" data-icon="play"></span></button>
+        <button class="icon-btn" data-media="next" title="Suivant"><span class="icon" data-icon="next"></span></button>
       </div>
     </div>
 
@@ -105,9 +134,11 @@
   <section id="drawer" class="panel" role="dialog" aria-label="Toutes les applis" hidden>
     <form id="search" class="search" role="search" autocomplete="off">
       <span class="icon" data-icon="search"></span>
-      <input id="search-input" type="text" placeholder="Rechercher des applis ou sur le Web" aria-label="Rechercher">
+      <input id="search-input" type="text" placeholder="Rechercher applis, fichiers, paramètres, calculs, web…" aria-label="Rechercher">
       <button id="ask-gemini" type="button" class="pill-btn tonal small"><span class="icon" data-icon="sparkle"></span>Demander à Gemini</button>
     </form>
+    <div id="continue" class="continue" hidden></div>
+    <div id="results" class="results" role="listbox" aria-label="Résultats" hidden></div>
     <div id="app-grid" class="app-grid" role="list"></div>
     <p id="grid-empty" class="grid-empty" hidden>Aucune appli. Appuie sur Entrée pour chercher sur Google.</p>
   </section>
@@ -117,10 +148,20 @@
     <button id="launcher" class="launcher" aria-haspopup="dialog" aria-controls="drawer" aria-expanded="false" title="Toutes les applis">
       <span class="launcher-o" aria-hidden="true"></span>
     </button>
+    <button id="overview-btn" class="dock-tool press" aria-pressed="false" title="Vue d'ensemble (Win+Tab)"><span class="icon" data-icon="overview"></span></button>
     <div id="dock-apps" class="dock-apps" role="list"></div>
     <span id="dock-sep" class="dock-sep" aria-hidden="true"></span>
     <div id="dock-running" class="dock-apps" role="list" aria-label="Fenêtres ouvertes"></div>
   </nav>
+
+  <div id="preview" class="preview" hidden></div>
+
+  <!-- Vue d'ensemble -->
+  <section id="overview" class="overview" aria-label="Vue d'ensemble" hidden>
+    <p class="ov-hint">Vue d'ensemble · clic pour ouvrir · Échap pour revenir</p>
+    <div class="ov-grid"></div>
+    <p class="ov-empty" hidden>Aucune fenêtre ouverte</p>
+  </section>
 
   <div id="menu" class="menu" role="menu" hidden></div>
 
@@ -145,8 +186,10 @@
     <div class="settings-body" tabindex="-1">
       <section id="set-wallpaper" class="set-section">
         <h3>Fond d'écran et style</h3>
-        <p class="set-hint">Les couleurs d'OpenBook sont tirées du fond d'écran (Material You).</p>
+        <p class="set-hint">Choisis un fond ou ta propre image : les couleurs d'OpenBook en sont tirées automatiquement (Material You).</p>
         <div id="wp-grid" class="wp-grid"></div>
+        <input id="wp-file" type="file" accept="image/*" hidden>
+        <button id="wp-choose" class="pill-btn text wp-choose"><span class="icon" data-icon="wallpaper"></span>Choisir une image sur l'ordinateur…</button>
         <div id="theme-mode" class="segmented" role="group" aria-label="Thème">
           <button data-mode="auto">Automatique</button>
           <button data-mode="light">Clair</button>
@@ -169,7 +212,7 @@
       </section>
       <section class="set-section set-about">
         <h3>À propos</h3>
-        <p class="set-hint">OpenBook 0.1.0 — launcher inspiré de Googlebook OS. Aucune appli tierce, aucun compte : tout reste sur cet ordinateur.</p>
+        <p class="set-hint">OpenBook 0.3.0 — launcher inspiré de Googlebook OS. Aucune appli tierce, aucun compte : tout reste sur cet ordinateur.</p>
       </section>
     </div>
   </dialog>
@@ -191,7 +234,9 @@
     <ul class="welcome-list">
       <li><span class="icon" data-icon="palette"></span>Thème, couleurs et fond d'écran Material You dans tout Windows</li>
       <li><span class="icon" data-icon="windows"></span>Barre des tâches masquée : le dock OpenBook la remplace</li>
-      <li><span class="icon" data-icon="keyboard"></span>Verr. Maj ouvre la recherche (Maj + Verr. Maj pour les majuscules)</li>
+      <li><span class="icon" data-icon="power"></span>OpenBook s'ouvre dès le démarrage de Windows</li>
+      <li><span class="icon" data-icon="search"></span>Touche Windows : lanceur OpenBook · Win+Tab : Vue d'ensemble</li>
+      <li><span class="icon" data-icon="keyboard"></span>Verr. Maj : Quick Insert (Maj + Verr. Maj pour les majuscules)</li>
       <li><span class="icon" data-icon="pointer"></span>Secoue la souris pour demander à Gemini</li>
     </ul>
     <p class="welcome-note">Réversible à tout moment : Paramètres OpenBook → « Revenir à Windows ».</p>

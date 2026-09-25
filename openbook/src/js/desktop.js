@@ -2,7 +2,8 @@
 // Clic droit ou appui long sur le bureau : ajouter un widget, fond d'écran…
 import { byId } from "./apps.js";
 import { svg } from "./icons.js";
-import { appIcon, launch } from "./launch.js";
+import { appIcon, launch, nativeIcon } from "./launch.js";
+import { invoke } from "./tauri.js";
 import { prefs, save } from "./store.js";
 import { closeAllPanels, showMenu, toast } from "./ui.js";
 import { WIDGETS } from "./widgets.js";
@@ -68,9 +69,21 @@ function draggable(el, { onDrop, onClick }) {
 
 /* ---------- Raccourcis ---------- */
 
+async function openDesktopFile(file) {
+  try {
+    await invoke("open_file", { path: file.path });
+  } catch (err) {
+    toast(String(err?.message ?? err), { force: true });
+  }
+}
+
 function renderShortcut(item) {
-  const app = byId.get(item.id);
+  // Fichier ou dossier posé sur le bureau (comme sur un Googlebook).
+  const app = item.file
+    ? { id: item.id, name: item.file.name, path: item.file.path, kind: "file", color: "#5f6368", glyph: item.file.dir ? "folder" : null }
+    : byId.get(item.id);
   if (!app) return;
+  const open = () => (item.file ? openDesktopFile(item.file) : launch(app));
   const el = document.createElement("div");
   el.className = "shortcut";
   el.tabIndex = 0;
@@ -78,7 +91,7 @@ function renderShortcut(item) {
   el.dataset.id = item.id;
   el.style.left = item.x + "px";
   el.style.top = item.y + "px";
-  el.append(appIcon(app, 56));
+  el.append(item.file && !item.file.dir ? fileIcon(item.file) : appIcon(app, 56));
   const label = document.createElement("span");
   label.textContent = app.name;
   el.append(label);
@@ -88,14 +101,14 @@ function renderShortcut(item) {
       item.y = y;
       save();
     },
-    onClick: () => launch(app),
+    onClick: open,
   });
-  el.addEventListener("keydown", (e) => e.key === "Enter" && launch(app));
+  el.addEventListener("keydown", (e) => e.key === "Enter" && open());
   el.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     e.stopPropagation();
     showMenu(e.clientX, e.clientY, [
-      { label: "Ouvrir", icon: "open", run: () => launch(app) },
+      { label: "Ouvrir", icon: "open", run: open },
       { label: "Retirer du bureau", icon: "trash", run: () => removeShortcut(item.id) },
     ]);
   });
@@ -121,6 +134,36 @@ export function addShortcut(id) {
   }
   const [x, y] = freeSpot(96, 104);
   const item = { id, x, y };
+  prefs.desktop.push(item);
+  save();
+  renderShortcut(item);
+}
+
+/** Icône d'un document : pastille avec l'icône Windows du type de fichier. */
+function fileIcon(file) {
+  const chip = document.createElement("span");
+  chip.className = "app-chip glyph file-chip";
+  chip.style.setProperty("--app", "#5f6368");
+  chip.style.setProperty("--size", "56px");
+  chip.innerHTML = svg("file");
+  nativeIcon(file.path, (url) => {
+    if (!url) return;
+    chip.classList.remove("glyph");
+    chip.classList.add("native");
+    chip.innerHTML = `<img alt="" src="${url}">`;
+  });
+  return chip;
+}
+
+/** Pose un fichier ou un dossier sur le bureau. */
+export function addFileShortcut(file) {
+  const id = "file:" + file.path.toLowerCase();
+  if (prefs.desktop.some((s) => s.id === id)) {
+    toast("Déjà sur le bureau");
+    return;
+  }
+  const [x, y] = freeSpot(96, 104);
+  const item = { id, file: { path: file.path, name: file.name, dir: !!file.dir }, x, y };
   prefs.desktop.push(item);
   save();
   renderShortcut(item);
