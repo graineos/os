@@ -1,0 +1,23 @@
+{
+  "name": "openbook",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenBook — launcher plein écran pour Windows inspiré de Googlebook OS",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "icons": "tauri icon assets/logo.svg -o src-tauri/icons && rm -rf src-tauri/icons/android src-tauri/icons/ios",
+    "vendor": "node scripts/build-vendor.mjs",
+    "demo": "http-server . -p 4173 -c-1",
+    "screenshots": "node scripts/screenshots.mjs"
+  },
+  "devDependencies": {
+    "@material/material-color-utilities": "0.4.0",
+    "@tauri-apps/cli": "^2.11.5",
+    "esbuild": "^0.28.2",
+    "http-server": "^14.1.1",
+    "playwright": "^1.56.1"
+  }
+}

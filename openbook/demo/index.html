@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenBook — démo</title>
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #111; font-family: system-ui, sans-serif; }
+    iframe { border: 0; width: 100%; height: 100%; display: block; }
+    #log {
+      position: fixed; left: 12px; bottom: 12px; max-width: 420px;
+      padding: 10px 14px; border-radius: 14px;
+      background: rgba(20, 20, 24, .86); color: #e6e6ee; font-size: 12px; line-height: 1.5;
+      pointer-events: none;
+    }
+    #log b { color: #b4c5ff; }
+    body.clean #log { display: none; }
+  </style>
+  <script src="mock-tauri.js"></script>
+</head>
+<body>
+  <div id="log"><b>Démo OpenBook</b> — les commandes Windows sont simulées ici.<br><span id="last">Aucune commande pour l'instant.</span></div>
+  <iframe id="app" src="../src/index.html" title="OpenBook"></iframe>
+</body>
+</html>
