@@ -2,7 +2,17 @@
 
 Appli Android d'Angel Movies (Films & Séries d'angel-beta.fr) pour Google TV, Chromecast avec Google TV, Android TV, Fire TV, tablettes et téléphones Android.
 
-L'appli ouvre `https://angel-beta.fr/films-series` en plein écran. La navigation se fait à la télécommande (flèches, OK, Retour). La vidéo passe en plein écran et la session reste connectée.
+L'appli ouvre `https://angel-beta.fr/films-series` en plein écran. La navigation se fait à la télécommande (flèches, OK, Retour).
+
+### Pointeur (lecteur intégré)
+Le lecteur de Movix vient d'un autre site : on ne peut pas y naviguer avec les flèches. Dès que le lecteur est à l'écran, l'appli affiche donc un **pointeur** :
+- **Flèches** : déplacer le pointeur (plus vite si on reste appuyé). Au bord haut ou bas de l'écran, la page défile.
+- **OK** : cliquer.
+- **Appui long sur OK** : couper le pointeur.
+- **Menu / Info / Guide** : activer ou couper le pointeur n'importe où.
+- **Retour** : fermer la page de pub ouverte par le lecteur, puis le lecteur, puis la fiche.
+
+Les pages ouvertes par un lecteur (pub à ouvrir pour débloquer la vidéo) s'affichent par-dessus le film. Retour les ferme ; sinon elles se ferment seules au bout de 20 s. La vidéo passe en plein écran et la session reste connectée.
 
 - Téléchargement direct : **https://angel-beta.fr/apk**. Ce lien redirige vers l'APK de la release `angel-movies-tv`.
 - Guide d'installation selon l'appareil : **https://angel-beta.fr/films-tv**.
