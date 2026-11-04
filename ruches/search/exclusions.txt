@@ -1,0 +1,2 @@
+# Adresses à ne jamais indexer (demandes de retrait, pages privées…).
+# Une ligne = un préfixe d'adresse complet, ex. : https://exemple.fr/page-a-retirer

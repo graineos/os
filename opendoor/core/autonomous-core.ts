@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 
 import { AngelAgentRuntime, type AngelAgent } from './agent-runtime';
 import { AngelControlPlane, type HealthProbe } from './control-plane';

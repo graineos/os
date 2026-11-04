@@ -1,0 +1,166 @@
+{
+  "userAgent": "RuchesBot/0.1 (+https://angel-beta.fr/lab ; robot d'indexation expérimental, respecte robots.txt)",
+  "delayMs": 1100,
+  "sites": [
+    {
+      "host": "www.service-public.gouv.fr",
+      "label": "Service Public",
+      "max": 380,
+      "include": "^/particuliers/vosdroits/(F|N)\\d+",
+      "seeds": [
+        "/particuliers/vosdroits/N19810",
+        "/particuliers/vosdroits/N19806",
+        "/particuliers/vosdroits/N19808",
+        "/particuliers/vosdroits/N19811",
+        "/particuliers/vosdroits/N19805"
+      ]
+    },
+    {
+      "host": "fr.wikipedia.org",
+      "label": "Wikipédia",
+      "max": 520,
+      "include": "^/wiki/[^:]+$",
+      "seeds": [
+        "/wiki/France",
+        "/wiki/Paris",
+        "/wiki/Union_europ%C3%A9enne",
+        "/wiki/R%C3%A9volution_fran%C3%A7aise",
+        "/wiki/Intelligence_artificielle",
+        "/wiki/R%C3%A9chauffement_climatique",
+        "/wiki/%C3%89conomie_de_la_France",
+        "/wiki/Litt%C3%A9rature_fran%C3%A7aise",
+        "/wiki/Cuisine_fran%C3%A7aise",
+        "/wiki/Cin%C3%A9ma_fran%C3%A7ais",
+        "/wiki/Ve_R%C3%A9publique",
+        "/wiki/Informatique",
+        "/wiki/Internet",
+        "/wiki/Football",
+        "/wiki/Lyon",
+        "/wiki/Marseille"
+      ],
+      "noSitemap": true
+    },
+    {
+      "host": "www.cnil.fr",
+      "label": "CNIL",
+      "max": 160,
+      "include": "^/fr/"
+    },
+    {
+      "host": "www.insee.fr",
+      "label": "Insee",
+      "max": 120,
+      "include": "^/fr/(statistiques|information|metadonnees/definition)"
+    },
+    {
+      "host": "www.culture.gouv.fr",
+      "label": "Ministère de la Culture",
+      "max": 110
+    },
+    {
+      "host": "www.impots.gouv.fr",
+      "label": "impots.gouv.fr",
+      "max": 120,
+      "include": "^/(particulier|professionnel)/"
+    },
+    {
+      "host": "www.francetravail.fr",
+      "label": "France Travail",
+      "max": 110,
+      "include": "^/(candidat|employeur)/"
+    },
+    {
+      "host": "www.cnrs.fr",
+      "label": "CNRS",
+      "max": 100,
+      "include": "^/fr/"
+    },
+    {
+      "host": "www.inria.fr",
+      "label": "Inria",
+      "max": 90,
+      "include": "^/fr/"
+    },
+    {
+      "host": "www.inrae.fr",
+      "label": "INRAE",
+      "max": 90
+    },
+    {
+      "host": "www.bnf.fr",
+      "label": "BnF",
+      "max": 80,
+      "include": "^/fr/"
+    },
+    {
+      "host": "www.senat.fr",
+      "label": "Sénat",
+      "max": 80
+    },
+    {
+      "host": "www.franceinfo.fr",
+      "label": "franceinfo",
+      "max": 200
+    },
+    {
+      "host": "angel-leclerc.fr",
+      "label": "Angel Leclerc",
+      "max": 40
+    },
+    {
+      "host": "www.conseil-constitutionnel.fr",
+      "label": "Conseil constitutionnel",
+      "max": 80
+    },
+    {
+      "host": "www.santepubliquefrance.fr",
+      "label": "Santé publique France",
+      "max": 110
+    },
+    {
+      "host": "www.travail-emploi.gouv.fr",
+      "label": "Ministère du Travail",
+      "max": 80
+    },
+    {
+      "host": "www.caf.fr",
+      "label": "CAF",
+      "max": 60
+    },
+    {
+      "host": "www.ign.fr",
+      "label": "IGN",
+      "max": 60
+    },
+    {
+      "host": "www.louvre.fr",
+      "label": "Musée du Louvre",
+      "max": 50
+    },
+    {
+      "host": "www.futura-sciences.com",
+      "label": "Futura",
+      "max": 160
+    },
+    {
+      "host": "www.radiofrance.fr",
+      "label": "Radio France",
+      "max": 120
+    },
+    {
+      "host": "www.cea.fr",
+      "label": "CEA",
+      "max": 60
+    },
+    {
+      "host": "www.lemonde.fr",
+      "label": "Le Monde",
+      "max": 120
+    },
+    {
+      "host": "www.20minutes.fr",
+      "label": "20 Minutes",
+      "max": 100
+    }
+  ]
+}

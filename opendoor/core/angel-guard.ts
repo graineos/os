@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 
 export type GuardSeverity = 'info' | 'warning' | 'critical';
 export type GuardAction = 'allow' | 'observe' | 'challenge' | 'rate-limit' | 'isolate' | 'recover' | 'rollback' | 'block';
