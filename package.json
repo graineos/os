@@ -1,5 +1,5 @@
 {
-  "name": "graineos",
+  "name": "ruches-os",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -20,5 +20,7 @@
   "devDependencies": {
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3"
-  }
+  },
+  "license": "AGPL-3.0-only",
+  "description": "Ruches OS — système libre et local d'abord : noyau à capacités (ex-GraineOS), espace Ruches en alvéoles, OpenBook, appli TV."
 }

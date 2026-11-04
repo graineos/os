@@ -105,4 +105,4 @@ See `docs/DISTRIBUTED_HYBRID_ARCHITECTURE.md` for the detailed architecture and 
 
 ## License
 
-OPENDOOR OS source code in this directory is intended to be distributed under GPL-2.0-only. Third-party components remain under their own licenses.
+This code is part of Ruches OS and is distributed under AGPL-3.0-only (see the LICENSE file at the root of the repository). Third-party components remain under their own licenses.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 import type { OpenDoorOSContext, OpenDoorOSDistribution, OpenDoorOSModule } from '../../core/types';
 
 function module(id: string, provides: string[]): OpenDoorOSModule {

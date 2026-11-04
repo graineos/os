@@ -1,57 +1,50 @@
-# GraineOS
+# Ruches OS
 
-GraineOS est un prototype de système d’exploitation convergent, minimaliste et modulaire.
+**Un système libre, français et local d'abord : un noyau à capacités, un espace de travail en alvéoles, et les applis qui vont avec.**
 
-L’objectif du dépôt est double :
+Ruches OS réunit en un seul projet ce qui s'appelait jusqu'ici **GraineOS** (le noyau et la VM web) et **Ruches** (fichiers, documents, tableur, agenda, tâches, recherche, stockage en alvéoles). Un seul nom, un seul dépôt, une seule licence : **AGPL-3.0**.
 
-1. développer le modèle de noyau (cellules, capacités, portails, délégation et révocation) ;
-2. fournir une VM web interactive servant de banc d’essai à l’interface et au comportement du système.
+> État réel : laboratoire. Ce qui est décrit comme disponible fonctionne et est testé ; le reste est en chantier.
 
-## Direction produit
-
-- **Apparence** : langage visuel très proche d’un macOS moderne — palette système, matériaux translucides, blur, profondeur, fenêtres raffinées, contrôles rouge/orange/vert, typographie système et animations fluides.
-- **Disposition** : logique spatiale inspirée de Windows — barre principale en bas, lanceur à gauche, applications épinglées, zone système et horloge à droite.
-- **Barre** : flottante et translucide autorisée.
-- **Principe** : ne pas mélanger deux identités visuelles. L’identité visuelle reste macOS ; seuls les emplacements principaux sont réorganisés.
-
-## Architecture actuelle
+## Ce qu'il y a dedans
 
 ```text
-src/
-├─ kernel/
-│  ├─ kernel.ts       # noyau pur : cellules, capacités, délégation, révocation, check()
-│  └─ vm.ts           # instance de la VM web (cellules Shell et Moniteur)
-├─ main.tsx           # bureau, fenêtres, terminal et moniteur
-└─ styles.css         # design system et matériaux visuels
+src/              Noyau et VM web (ex-GraineOS)
+├─ kernel/        cellules, capacités, délégation, révocation, check() — aucune dépendance
+├─ system/        services système de la VM
+└─ main.tsx       bureau, fenêtres, terminal, moniteur
+ruches/           Espace Ruches : fichiers, Plume, Grille, agenda, tâches, espaces, Ruches Search, alvéoles
+opendoor/         Couche d'orchestration (événements, workflows, synchro, déploiement) — fondue dans Ruches côté site
+openbook/         Liseuse / bibliothèque (Tauri)
+angelmovies-tv/   Appli TV (Android)
+tests/            Tests du noyau
 ```
 
-## OPENDOOR OS (`opendoor/`)
+### Le noyau (ex-GraineOS)
 
-Le dossier `opendoor/` reprend le cœur OPENDOOR OS (ex-`angel-os/`) issu du dépôt du site `angel-leclerc.fr`. C’est une couche d’orchestration (événements, workflows durables, synchro, déploiement, récupération), distincte du noyau à capacités de `src/kernel/`. Elle n’est pas encore branchée à la VM web ni incluse dans le build (`tsconfig.json` ne couvre que `src/`).
+Un modèle de sécurité par **capacités** : chaque cellule (programme) ne peut agir que sur ce qu'on lui a explicitement délégué, et toute délégation se révoque en cascade. `src/kernel/kernel.ts` n'a aucune dépendance : le site angel-leclerc.fr s'en sert comme autorité d'accès. La VM web sert de banc d'essai à l'interface et au comportement du système ; ce n'est pas encore un noyau qui démarre sur une machine nue.
 
-Ses fichiers portent l’en-tête `GPL-2.0-only`, alors que ce dépôt est sous GPL-3.0 : à harmoniser avant de mélanger les deux codes.
+### L'espace Ruches
 
-La VM web n’est pas encore un noyau bare-metal. Elle sert à stabiliser l’architecture, l’UX et les règles du système avant les étapes bas niveau.
+Fichiers, documents, tableur, agenda, tâches et espaces, **sur l'appareil**, sans cloud obligatoire. Chaque contenu est découpé en **alvéoles** identifiées par leur empreinte SHA-256 et écrites une seule fois : un doublon ne coûte presque rien, une nouvelle version ne stocke que la différence, et tout le coffre tient dans un fichier `.ruche`. Détails dans [`ruches/README.md`](ruches/README.md) et [`ruches/ARCHITECTURE.md`](ruches/ARCHITECTURE.md).
 
-## Lancer en local
+## Direction
+
+- **Local d'abord** : l'appareil est la source de vérité, le serveur est une option.
+- **Un seul cœur** pour tous les modules, des mécanismes simples plutôt qu'une infrastructure géante.
+- **Interface** : bureau sobre et fluide, barre en bas, lanceur à gauche ; côté web, la charte miel de Ruches.
+
+## Lancer
 
 ```bash
 npm install
-npm run dev
+npm run dev      # VM web et bureau
+npm test         # tests du noyau
+cd ruches && bun test   # tests de l'espace Ruches
 ```
 
-## Tester le noyau
+## Licence
 
-```bash
-npm test
-```
+Ruches OS est distribué sous **GNU AGPL-3.0-only** (fichier [`LICENSE`](LICENSE)). Si tu fais tourner une version modifiée en ligne, tu dois en publier le code. Les composants tiers gardent leur propre licence.
 
-`src/kernel/kernel.ts` n’a aucune dépendance : il est copié tel quel dans le site `angel-leclerc.fr`, qui s’en sert comme autorité d’accès.
-
-## Compiler
-
-```bash
-npm run build
-```
-
-Le projet est compatible avec un déploiement statique Vercel.
+Le code publié sur [angel-beta.fr/atelier-code](https://angel-beta.fr/atelier-code) est celui de ce dépôt.

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 
 import type { AngelLayer } from './system-contract';
 import type { AngelIssueRegistry } from './issue-registry';

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0-only
+// SPDX-License-Identifier: AGPL-3.0-only
 
 export interface KeyValueCache {
   get<T>(key: string): Promise<T | null>;
