@@ -42,7 +42,7 @@ jobs:
       - name: Archiver les deux exécutables
         uses: actions/upload-artifact@v4
         with:
-          name: ruche-companion-v0.7.0-windows
+          name: ruche-companion-v0.7.1-windows
           path: |
             desktop-companion/Ruche-Companion-Setup.exe
             desktop-companion/Ruche-Companion-Portable.exe
@@ -53,10 +53,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view ruche-companion-v0.7.0 --repo "${{ github.repository }}" >/dev/null 2>&1 || \
-            gh release create ruche-companion-v0.7.0 --repo "${{ github.repository }}" \
-              --title "Ruches OS Desktop Companion 0.7 alpha" --prerelease \
+          gh release view ruche-companion-v0.7.1 --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create ruche-companion-v0.7.1 --repo "${{ github.repository }}" \
+              --title "Ruches OS Desktop Companion 0.7.1 alpha" --prerelease \
               --notes "Compagnon Windows 11 facultatif pour Ruches OS et MyDockFinder. Version alpha expérimentale, non signée. Télécharger Setup pour installer, Portable sans installation. Ne remplace pas le shell Windows."
-          gh release upload ruche-companion-v0.7.0 \
+          gh release upload ruche-companion-v0.7.1 \
             Ruche-Companion-Setup.exe Ruche-Companion-Portable.exe \
             --clobber --repo "${{ github.repository }}"
