@@ -112,7 +112,7 @@ async function systemControl(command){
   const encoded=Buffer.from(script,'utf16le').toString('base64');
   const {stdout}=await execFileAsync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',encoded],{windowsHide:true,timeout:5500,maxBuffer:16384});
   if(!stdout.trim().startsWith('OK'))return {ok:false,error:'Windows n’a pas confirmé la commande'};
-  const percent=command.startsWith('brightness')?Number(stdout.trim().split(/\\s+/)[1]):null;
+  const percent=command.startsWith('brightness')?Number(stdout.trim().split(/\s+/)[1]):null;
   return {ok:true,message:Number.isFinite(percent)?'Luminosité : '+percent+' %':'Commande Windows exécutée'};
  }catch{return {ok:false,error:command.startsWith('brightness')?'Écran non compatible ou réglage refusé par Windows':'Commande audio refusée par Windows'}}
 }
