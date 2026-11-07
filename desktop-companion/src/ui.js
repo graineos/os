@@ -35,14 +35,42 @@ function settingToggle(key,label){const check=el('input',{type:'checkbox'});chec
 function desktop(){const d=el('div',{class:'ruche-desktop wallpaper-'+(settings.wallpaper||'aurora')});const guide=el('div',{class:'desktop-guide'},el('div',{class:'desktop-brand',text:'Ruche OS'}),el('div',{class:'desktop-date',text:new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}),el('div',{class:'desktop-subtitle',text:'Votre espace. Votre liberté.'}));const appsArea=el('div',{class:'desktop-shortcuts'},...[["🗂️","Ruche Finder",'open-finder'],['▦','Applications','open-launchpad'],['⌕','Recherche','open-search'],['⚙','Réglages','open-settings']].map(([glyph,name,act])=>el('button',{class:'desktop-shortcut',ondblclick:()=>action(act),onclick:()=>action(act)},el('span',{text:glyph}),el('strong',{text:name}))));d.append(guide,appsArea,el('div',{class:'desktop-watermark',text:'RUCHE  •  DESKTOP ALPHA'}));root.append(d)}
 function performanceSelect(){const select=el('select',{'aria-label':'Mode de performance'},...[['adaptive','Adaptatif (recommandé)'],['balanced','Économie de ressources'],['quality','Qualité visuelle']].map(([value,text])=>el('option',{value,text})));select.value=settings.performanceMode||'adaptive';select.addEventListener('change',async()=>{settings=await action('settings-set',{performanceMode:select.value})||settings;currentPerformance=await action('performance');render()});return select}
 function chrome(title,kind){
- const controls=el('div',{class:'traffic-lights ruche-no-drag',role:'group','aria-label':'Commandes de fenêtre'},...[
-  ['red','Fermer la fenêtre','close','×'],['yellow','Réduire la fenêtre','minimize','−'],['green','Agrandir (Alt : plein écran)','maximize','+']
- ].map(([color,label,cmd,glyph])=>el('button',{class:'traffic '+color,title:label,'aria-label':label,onclick:e=>action('window-control',color==='green'&&e.altKey?'fullscreen':cmd)},el('span',{class:'traffic-glyph',text:glyph}))));
- const titlebar=el('div',{class:'window-chrome ruche-draggable',ondblclick:e=>{if(e.target.closest('button,input,select,a'))return;action('window-control','maximize')}},controls,el('strong',{text:title}),el('span',{class:'chrome-right',text:kind==='finder'?'⌘  Ruche Finder':'Ruche OS'}));
- return titlebar;
+ const controls=el('div',{class:'traffic-lights ruche-no-drag',role:'group','aria-label':'Commandes réelles de la fenêtre'},...[
+  ['red','Fermer cette fenêtre','close','×'],
+  ['yellow','Réduire dans la barre des tâches','minimize','−'],
+  ['green','Zoomer ou restaurer (Alt : plein écran)','maximize','↗']
+ ].map(([color,label,cmd,glyph])=>el('button',{class:'traffic '+color,type:'button',title:label,'aria-label':label,onclick:e=>{e.stopPropagation();action('window-control',color==='green'&&e.altKey?'fullscreen':cmd)}},el('span',{class:'traffic-glyph',text:glyph}))));
+ return el('div',{class:'window-chrome ruche-draggable',ondblclick:e=>{if(e.target.closest('button,input,select,a'))return;action('window-control','maximize')}},controls,el('strong',{text:title}),el('span',{class:'chrome-right',text:kind==='finder'?'Ruche Finder':''}));
 }
 
-function controlCenter(){const pane=el('div',{class:'control-panel glass'}),heading=el('div',{class:'control-head'},el('b',{text:'Centre de contrôle'}),el('button',{class:'round-close',title:'Fermer',text:'×',onclick:()=>action('hide','control')}));const grid=el('div',{class:'control-grid'});const items=[['◉','Wi-Fi','wifi'],['ᛒ','Bluetooth','bluetooth'],['◖','Son','sound'],['▣','Écran','display'],['◐','Batterie','battery'],['☷','Notifications','notifications']];for(const [symbol,name,id]of items){grid.append(el('button',{class:'control-tile',onclick:()=>action('open-windows-settings',id)},el('span',{class:'control-symbol',text:symbol}),el('span',{},el('strong',{text:name}),el('small',{text:'Ouvrir les paramètres Windows'}))))}const info=el('p',{class:'control-note',text:'Les contrôles ouvrent les réglages système réels. Aucun interrupteur fictif.'});const status=el('div',{class:'system-status',text:'Lecture des informations système…'});api.invoke('system-info').then(x=>{status.textContent=`Windows ${x.version||''}  ·  ${x.screens} écran(s)  ·  ${x.onBattery?'Sur batterie':'Sur secteur ou non détecté'}`}).catch(()=>status.textContent='Informations système indisponibles');pane.append(chrome('Centre de contrôle','control'),heading,grid,status,info,el('button',{class:'control-link',text:'Personnaliser Ruche OS  →',onclick:()=>action('open-settings')}));root.append(pane)}
+function controlCenter(){
+ const pane=el('section',{class:'control-panel glass',role:'region','aria-label':'Centre de contrôle Ruche'});
+ const grid=el('div',{class:'control-grid'});
+ // Les actions Wi-Fi/Bluetooth ouvrent Windows : ce ne sont pas des interrupteurs fictifs.
+ const links=[['◉','Wi-Fi','wifi'],['ᛒ','Bluetooth','bluetooth'],['◐','Batterie','battery'],['☷','Notifications','notifications']];
+ for(const [symbol,name,id] of links) grid.append(el('button',{class:'control-tile system-link',type:'button',title:'Ouvrir les paramètres '+name,onclick:()=>action('open-windows-settings',id)},el('span',{class:'control-symbol',text:symbol}),el('strong',{text:name}),el('small',{text:'Réglages Windows ↗'})));
+ function controlsTile(symbol,name,id){
+  const card=el('div',{class:'control-tile live-control'},el('span',{class:'control-symbol',text:symbol}),el('strong',{text:name}));
+  const feedback=el('small',{class:'control-feedback','aria-live':'polite',text:id==='volume'?'Volume de Windows':'Luminosité écran intégré'});
+  const buttons=el('div',{class:'control-actions'});
+  for(const [label,command,icon] of [['Diminuer',id+'-down','−'],['Augmenter',id+'-up','+']]){
+   const button=el('button',{class:'control-adjust ruche-no-drag',type:'button',title:label+' '+name,'aria-label':label+' '+name,text:icon,onclick:async()=>{
+    button.disabled=true;feedback.textContent='Application…';
+    try{const result=await api.invoke('system-control',command);feedback.textContent=result?.ok?(result.message||'Commande exécutée'):(result?.error||'Indisponible sur cet appareil');}
+    catch{feedback.textContent='Commande indisponible'}
+    finally{button.disabled=false}
+   }});
+   buttons.append(button);
+  }
+  if(id==='volume') buttons.append(el('button',{class:'control-adjust ruche-no-drag',type:'button',title:'Couper ou rétablir le son','aria-label':'Couper ou rétablir le son',text:'◖',onclick:async()=>{const result=await action('system-control','volume-mute');feedback.textContent=result?.ok?'Son activé/désactivé':'Commande indisponible';}}));
+  card.append(buttons,feedback);return card;
+ }
+ grid.append(controlsTile('◖','Son','volume'),controlsTile('▣','Écran','brightness'));
+ const status=el('div',{class:'system-status',text:'Lecture des informations système…'});
+ api.invoke('system-info').then(x=>{status.textContent=`Windows ${x.version||''} · ${x.screens} écran(s) · ${x.onBattery?'Sur batterie':'Sur secteur ou non détecté'}`}).catch(()=>status.textContent='Informations système indisponibles');
+ pane.append(chrome('Centre de contrôle','control'),el('div',{class:'control-body'},grid,status,el('p',{class:'control-note',text:'Son : commandes système réelles. Luminosité : écrans intégrés compatibles. Wi-Fi et Bluetooth ouvrent leurs réglages Windows ; aucun faux interrupteur.'}),el('button',{class:'control-link',text:'Personnaliser Ruche OS  →',onclick:()=>action('open-settings')})));
+ root.append(pane);
+}
 let quickLookOpen=false;let finderTabs=[{path:'',history:[''],index:0}],activeFinderTab=0,finderView='icons',finderSelection=null,finderSearch='',finderRequest=0;
 function currentFinder(){return finderTabs[activeFinderTab]}
 function finderNavigate(path){const t=currentFinder();t.history=t.history.slice(0,t.index+1);t.history.push(path);t.index++;t.path=path;finderSelection=null;finder()}
