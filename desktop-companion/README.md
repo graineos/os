@@ -42,6 +42,6 @@ npm run check
 npm start
 ```
 
-La commande `npm run build:win` prépare un exécutable Windows portable si l'environnement de compilation et Electron Builder fonctionnent. **Le binaire n'est pas encore publié comme version stable.**
+La commande `npm run build:win` prépare un exécutable Windows portable si l'environnement de compilation et Electron Builder fonctionnent. **Installateurs alpha :** [Télécharger l'installateur Windows (.exe)](https://github.com/graineos/os/releases/download/ruche-companion-v0.7.0/Ruche-Companion-Setup.exe) ou [la version portable (.exe)](https://github.com/graineos/os/releases/download/ruche-companion-v0.7.0/Ruche-Companion-Portable.exe), dès la réussite du workflow Windows. Les exécutables sont non signés et expérimentaux ; Windows SmartScreen peut afficher un avertissement. **La version n'est pas validée visuellement sur Windows 11.**
 
 La version open source reste expérimentale ; la compatibilité avec MyDockFinder et la fidélité visuelle macOS Tahoe doivent être validées sur un vrai PC.
