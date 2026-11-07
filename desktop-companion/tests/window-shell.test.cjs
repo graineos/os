@@ -14,9 +14,9 @@ test('native Windows window decorations are disabled in the Electron host',()=>{
 test('single Mac-like titlebar with functional red yellow green controls',()=>{
  const ui=source('ui.js');
  assert.match(ui,/function chrome\(title,kind\)/);
- assert.match(ui,/\['red','Fermer la fenêtre','close'/);
- assert.match(ui,/\['yellow','Réduire la fenêtre','minimize'/);
- assert.match(ui,/\['green','Agrandir \(Alt : plein écran\)','maximize'/);
+ assert.match(ui,/\['red','Fermer cette fenêtre','close'/);
+ assert.match(ui,/\['yellow','Réduire dans la barre des tâches','minimize'/);
+ assert.match(ui,/\['green','Zoomer ou restaurer \(Alt : plein écran\)','maximize'/);
  assert.match(ui,/ondblclick:e=>/);
  assert.match(ui,/s\.append\(chrome\('Réglages','settings'\)/);
 });
