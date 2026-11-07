@@ -16,6 +16,7 @@ src/              Noyau et VM web (ex-GraineOS)
 ruches/           Espace Ruches : fichiers, Plume, Grille, agenda, tâches, espaces, Ruches Search, alvéoles
 opendoor/         Couche d'orchestration (événements, workflows, synchro, déploiement) — fondue dans Ruches côté site
 openbook/         Liseuse / bibliothèque (Tauri)
+desktop-companion/  Module Windows 11 pour compléter MyDockFinder (alpha Electron)
 angelmovies-tv/   Appli TV (Android)
 tests/            Tests du noyau
 ```
@@ -47,4 +48,4 @@ cd ruches && bun test   # tests de l'espace Ruches
 
 Ruches OS est distribué sous **GNU AGPL-3.0-only** (fichier [`LICENSE`](LICENSE)). Si tu fais tourner une version modifiée en ligne, tu dois en publier le code. Les composants tiers gardent leur propre licence.
 
-Le code publié sur [angel-beta.fr/atelier-code](https://angel-beta.fr/atelier-code) est celui de ce dépôt.
+Le code publié sur [angel-beta.fr/atelier-code](https://angel-beta.fr/atelier-code) est celui de ce dépôt. Le module [Ruche Desktop Companion](desktop-companion/README.md) est publié dans ce même dépôt, avec sa propre licence MIT et un statut alpha.
