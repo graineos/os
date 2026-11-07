@@ -6,7 +6,7 @@
 
 Version de travail : **0.7 alpha**. Ce module reste **expérimental**. L'archive source complète a passé **12 tests Node**, mais n'a pas encore été compilée ni testée graphiquement sur Windows 11. Aucune amélioration des performances de MyDockFinder n'est démontrée.
 
-Cette intégration au dépôt public est en cours : seuls les fichiers présents ici sont considérés comme publiés. **Ne pas présenter ce répertoire comme une distribution installable complète tant que tous les sources 0.7 et les builds Windows ne sont pas présents et validés.**
+**Publication :** le code source complet 0.7 est présent dans `src/` et `tests/`, et une archive de référence est conservée dans `source-v0.7.zip`. Les 12 tests Node sont passés dans le workflow d'extraction GitHub Actions. Cela ne vaut pas validation graphique sous Windows 11 et aucun installateur `.exe` n'a encore été vérifié.
 
 ## Rôle dans Ruches OS
 
@@ -31,3 +31,17 @@ Les nouveaux fichiers publiés sous `desktop-companion/` sont sous MIT (voir `LI
 ## Publication web
 
 Les sources de ce module apparaissent dans le lecteur public : https://angel-beta.fr/atelier-code?source=ruches-os&chemin=desktop-companion
+
+## Démarrer le code (Windows 11)
+
+Pré-requis : Node.js 22 et npm. Dans ce dossier :
+
+```powershell
+npm install
+npm run check
+npm start
+```
+
+La commande `npm run build:win` prépare un exécutable Windows portable si l'environnement de compilation et Electron Builder fonctionnent. **Le binaire n'est pas encore publié comme version stable.**
+
+La version open source reste expérimentale ; la compatibilité avec MyDockFinder et la fidélité visuelle macOS Tahoe doivent être validées sur un vrai PC.
