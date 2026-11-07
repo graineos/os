@@ -1,0 +1,39 @@
+{
+  "name": "ruche-os-desktop",
+  "version": "0.7.0",
+  "description": "Ruche OS Companion 0.7 — frameless Tahoe-inspired windows, Finder and Quick Look alongside MyDockFinder",
+  "main": "src/main.cjs",
+  "author": "Ruche OS contributors",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check src/main.cjs && node --check src/preload.cjs && node --check src/ui.js && node --check src/ruche-core.cjs && node --check src/finder-service.cjs && node --test tests/*.test.cjs",
+    "build:win": "electron-builder --win portable",
+    "build:win:installer": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "fr.rucheos.desktop",
+    "productName": "Ruche OS Desktop",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "Ruche-OS-Desktop-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
