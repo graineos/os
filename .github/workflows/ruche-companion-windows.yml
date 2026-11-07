@@ -58,5 +58,5 @@ jobs:
               --title "Ruches OS Desktop Companion 0.7 alpha" --prerelease \
               --notes "Compagnon Windows 11 facultatif pour Ruches OS et MyDockFinder. Version alpha expérimentale, non signée. Télécharger Setup pour installer, Portable sans installation. Ne remplace pas le shell Windows."
           gh release upload ruche-companion-v0.7.0 \
-            desktop-companion/Ruche-Companion-Setup.exe desktop-companion/Ruche-Companion-Portable.exe \
+            Ruche-Companion-Setup.exe Ruche-Companion-Portable.exe \
             --clobber --repo "${{ github.repository }}"
