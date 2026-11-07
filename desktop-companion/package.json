@@ -1,7 +1,7 @@
 {
   "name": "ruche-os-desktop",
-  "version": "0.7.0",
-  "description": "Ruche OS Companion 0.7 — frameless Tahoe-inspired windows, Finder and Quick Look alongside MyDockFinder",
+  "version": "0.7.1",
+  "description": "Ruches OS Desktop Companion 0.7.1 alpha - native Windows volume/brightness controls and authentic frameless window buttons",
   "main": "src/main.cjs",
   "author": "Ruche OS contributors",
   "license": "MIT",
