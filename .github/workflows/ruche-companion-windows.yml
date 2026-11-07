@@ -1,0 +1,62 @@
+name: Ruche Companion - Windows EXE
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop-companion/**'
+      - '.github/workflows/ruche-companion-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ruche-companion-windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop-companion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Installer les dépendances
+        run: npm install --no-audit --no-fund
+      - name: Vérifier la syntaxe et les tests
+        run: npm run check
+      - name: Construire installateur et version portable
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --win nsis portable --x64 --publish never
+      - name: Identifier les exécutables
+        shell: pwsh
+        run: |
+          $artifacts = Get-ChildItem dist -File -Filter '*.exe'
+          $setup = $artifacts | Where-Object { $_.Name -match 'Setup' }
+          $portable = $artifacts | Where-Object { $_.Name -notmatch 'Setup' }
+          if (!$setup -or !$portable) { throw 'Installateur NSIS ou EXE portable manquant' }
+          Copy-Item $setup[0].FullName Ruche-Companion-Setup.exe
+          Copy-Item $portable[0].FullName Ruche-Companion-Portable.exe
+      - name: Archiver les deux exécutables
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruche-companion-v0.7.0-windows
+          path: |
+            desktop-companion/Ruche-Companion-Setup.exe
+            desktop-companion/Ruche-Companion-Portable.exe
+          if-no-files-found: error
+      - name: Publier la version alpha sur GitHub Releases
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view ruche-companion-v0.7.0 --repo "${{ github.repository }}" >/dev/null 2>&1 || \
+            gh release create ruche-companion-v0.7.0 --repo "${{ github.repository }}" \
+              --title "Ruches OS Desktop Companion 0.7 alpha" --prerelease \
+              --notes "Compagnon Windows 11 facultatif pour Ruches OS et MyDockFinder. Version alpha expérimentale, non signée. Télécharger Setup pour installer, Portable sans installation. Ne remplace pas le shell Windows."
+          gh release upload ruche-companion-v0.7.0 \
+            desktop-companion/Ruche-Companion-Setup.exe desktop-companion/Ruche-Companion-Portable.exe \
+            --clobber --repo "${{ github.repository }}"
