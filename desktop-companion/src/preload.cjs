@@ -1,5 +1,5 @@
 const {contextBridge, ipcRenderer} = require('electron');
-const allowed = new Set(['show','hide','launch','app-list','settings-get','settings-set','open-settings','open-launchpad','open-search','quit','minimize-windows','open-folder','open-control','open-finder','open-activity','files','file-open','activity-list','window-focus','open-windows-settings','system-info','app-icon','companion-status','companion-refresh','performance','window-control','window-state','file-preview','finder-operation']);
+const allowed = new Set(['show','hide','launch','app-list','settings-get','settings-set','open-settings','open-launchpad','open-search','quit','minimize-windows','open-folder','open-control','open-finder','open-activity','files','file-open','activity-list','window-focus','open-windows-settings','system-info','system-control','app-icon','companion-status','companion-refresh','performance','window-control','window-state','file-preview','finder-operation']);
 contextBridge.exposeInMainWorld('ruche', {
   invoke: (name, value) => {
     if (!allowed.has(name)) return Promise.reject(new Error('Action non autorisée'));
