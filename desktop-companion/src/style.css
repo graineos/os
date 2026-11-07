@@ -109,3 +109,9 @@ body{background:transparent}#app{isolation:isolate}
 .chrome-right{position:absolute;right:17px;top:50%;transform:translateY(-50%);font-size:10px}
 @media (max-width:440px){.control-body{padding:10px}.control-grid{gap:8px}.control-tile{padding:11px}.control-adjust{min-width:34px}}
 @media (prefers-reduced-motion:reduce){.traffic-glyph,.control-adjust{transition:none}}
+
+/* Read-only inventory output. */
+.legacy-results{margin:10px 0;display:grid;gap:8px;max-height:220px;overflow:auto}
+.legacy-entry{border:1px solid var(--ruche-hairline);background:rgba(255,255,255,.5);padding:9px;border-radius:10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.legacy-entry strong{font-size:12px}.legacy-entry small{color:var(--muted);font-size:10px}
+.legacy-entry code{white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;user-select:text}
